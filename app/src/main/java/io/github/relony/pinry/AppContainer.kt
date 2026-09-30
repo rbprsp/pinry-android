@@ -52,7 +52,7 @@ class AppContainer(context: Context) {
     private fun baseUrl(): HttpUrl = checkNotNull(server.baseUrl) { "Not logged in" }
 
     val pins = PinRepository(::api, ::baseUrl)
-    val boards = BoardRepository(::api)
+    val boards = BoardRepository(::api, ::baseUrl)
     val tags = TagRepository(::api)
     val imageUrls = ImageUrlResolver(http)
 

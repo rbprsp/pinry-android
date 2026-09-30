@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,6 +38,7 @@ fun FeedScreen(
     onOpen: (Pin) -> Unit,
     title: String? = null,
     onBack: () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
     header: (@Composable () -> Unit)? = null,
 ) {
     val state by vm.pager.state.collectAsStateWithLifecycle()
@@ -45,7 +47,7 @@ fun FeedScreen(
     val top = if (title == null) statusBar + 8.dp else 8.dp
 
     Column(Modifier.fillMaxSize()) {
-        if (title != null) BackTopBar(title, onBack)
+        if (title != null) BackTopBar(title, onBack, actions = actions)
         RefreshBox(
             refreshing = state.refreshing,
             onRefresh = vm.pager::refresh,

@@ -3,6 +3,7 @@
 package io.github.relony.pinry.ui.common
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -14,7 +15,12 @@ import androidx.compose.ui.res.stringResource
 import io.github.relony.pinry.R
 
 @Composable
-fun BackTopBar(title: String, onBack: () -> Unit, @DrawableRes icon: Int = R.drawable.ic_arrow_back) {
+fun BackTopBar(
+    title: String,
+    onBack: () -> Unit,
+    @DrawableRes icon: Int = R.drawable.ic_arrow_back,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
     TopAppBar(
         title = { Text(title) },
         navigationIcon = {
@@ -22,5 +28,6 @@ fun BackTopBar(title: String, onBack: () -> Unit, @DrawableRes icon: Int = R.dra
                 Icon(painterResource(icon), contentDescription = stringResource(R.string.back))
             }
         },
+        actions = actions,
     )
 }

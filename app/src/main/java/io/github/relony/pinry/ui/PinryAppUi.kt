@@ -4,9 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +27,11 @@ import io.github.relony.pinry.AppContainer
 import io.github.relony.pinry.PinryApp
 import io.github.relony.pinry.R
 import io.github.relony.pinry.data.PinFilter
+import io.github.relony.pinry.data.api.BoardName
+import io.github.relony.pinry.ui.boards.BoardFeedScreen
+import io.github.relony.pinry.ui.boards.BoardViewModel
+import io.github.relony.pinry.ui.boards.BoardsScreen
+import io.github.relony.pinry.ui.boards.BoardsViewModel
 import io.github.relony.pinry.ui.common.FabAction
 import io.github.relony.pinry.ui.common.ToolbarScaffold
 import io.github.relony.pinry.ui.common.ToolbarTab
@@ -48,7 +51,8 @@ import kotlinx.serialization.Serializable
 @Serializable data object BoardsKey : NavKey
 @Serializable data object ProfileKey : NavKey
 @Serializable data class FeedKey(val filter: PinFilter) : NavKey
-@Serializable data class PinKey(val id: Int) : NavKey
+/** [fromBoard]: opened from one of the user's boards, so the pin can be removed from it. */
+@Serializable data class PinKey(val id: Int, val fromBoard: BoardName? = null) : NavKey
 @Serializable data class ViewerKey(val id: Int) : NavKey
 @Serializable data class CreateKey(val source: CreateSource) : NavKey
 @Serializable data class EditPinKey(val id: Int) : NavKey
@@ -99,7 +103,12 @@ fun PinryAppUi(username: String, onLogout: () -> Unit) {
                 entry<HomeKey> {
                     FeedScreen(feedViewModel(container, PinFilter.All), onOpen = { open(PinKey(it.id)) })
                 }
-                entry<BoardsKey> { Placeholder(stringResource(R.string.tab_boards)) }
+                entry<BoardsKey> {
+                    BoardsScreen(
+                        viewModel { BoardsViewModel(container.boards, username) },
+                        onOpen = { open(FeedKey(PinFilter.Board(it.id, it.name))) },
+                    )
+                }
                 entry<ProfileKey> {
                     FeedScreen(
                         feedViewModel(container, PinFilter.User(username)),
@@ -108,16 +117,28 @@ fun PinryAppUi(username: String, onLogout: () -> Unit) {
                     )
                 }
                 entry<FeedKey> { key ->
-                    FeedScreen(
-                        feedViewModel(container, key.filter),
-                        onOpen = { open(PinKey(it.id)) },
-                        title = key.filter.title(),
-                        onBack = back,
-                    )
+                    val filter = key.filter
+                    if (filter is PinFilter.Board) {
+                        BoardFeedScreen(
+                            feed = feedViewModel(container, filter),
+                            vm = viewModel { BoardViewModel(container.boards, filter.id, username) },
+                            fallbackTitle = filter.name,
+                            onOpen = { open(PinKey(it.id, fromBoard = BoardName(filter.id, filter.name))) },
+                            onBack = back,
+                        )
+                    } else {
+                        FeedScreen(
+                            feedViewModel(container, filter),
+                            onOpen = { open(PinKey(it.id)) },
+                            title = filter.title(),
+                            onBack = back,
+                        )
+                    }
                 }
                 entry<PinKey> { key ->
                     PinDetailScreen(
-                        viewModel { PinViewModel(container.pins, key.id, me = username) },
+                        viewModel { PinViewModel(container.pins, container.boards, key.id, me = username) },
+                        fromBoard = key.fromBoard,
                         onBack = back,
                         onEdit = { open(EditPinKey(key.id)) },
                         onOpenImage = { open(ViewerKey(key.id)) },
@@ -126,7 +147,7 @@ fun PinryAppUi(username: String, onLogout: () -> Unit) {
                     )
                 }
                 entry<ViewerKey> { key ->
-                    ImageViewerScreen(viewModel { PinViewModel(container.pins, key.id, me = username) }, onBack = back)
+                    ImageViewerScreen(viewModel { PinViewModel(container.pins, container.boards, key.id, me = username) }, onBack = back)
                 }
                 entry<CreateKey> { key ->
                     CreatePinScreen(
@@ -148,7 +169,7 @@ private fun appContainer(): AppContainer = (LocalContext.current.applicationCont
 
 @Composable
 private fun feedViewModel(container: AppContainer, filter: PinFilter) =
-    viewModel { FeedViewModel(container.pins, filter) }
+    viewModel { FeedViewModel(container.pins, container.boards, filter) }
 
 private fun PinFilter.title(): String? = when (this) {
     PinFilter.All -> null
@@ -166,12 +187,5 @@ private fun ProfileHeader(username: String, onLogout: () -> Unit) {
     ) {
         Text(username, style = MaterialTheme.typography.headlineMedium)
         OutlinedButton(onClick = onLogout) { Text(stringResource(R.string.logout)) }
-    }
-}
-
-@Composable
-private fun Placeholder(title: String) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(title, style = MaterialTheme.typography.displaySmall)
     }
 }

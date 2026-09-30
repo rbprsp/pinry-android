@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -26,7 +29,8 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,7 +54,9 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import io.github.relony.pinry.R
+import io.github.relony.pinry.data.api.BoardName
 import io.github.relony.pinry.data.api.Pin
+import io.github.relony.pinry.ui.create.NewBoardDialog
 import io.github.relony.pinry.ui.common.PinryLoadingIndicator
 import io.github.relony.pinry.ui.common.aspectRatio
 import io.github.relony.pinry.ui.common.gravatarUrl
@@ -59,6 +65,7 @@ import io.github.relony.pinry.ui.common.gridCacheKey
 @Composable
 fun PinDetailScreen(
     vm: PinViewModel,
+    fromBoard: BoardName?,
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onOpenImage: () -> Unit,
@@ -70,6 +77,7 @@ fun PinDetailScreen(
     val deleted by vm.deleted.collectAsStateWithLifecycle()
     val deleteFailed by vm.deleteFailed.collectAsStateWithLifecycle()
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    var pickingBoard by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(deleted) { if (deleted) onBack() }
 
     Box(Modifier.fillMaxSize()) {
@@ -81,6 +89,14 @@ fun PinDetailScreen(
                 pin = p,
                 webUrl = vm.webUrl,
                 ownActions = if (vm.isMine(p)) OwnActions(onEdit, onDelete = { confirmDelete = true }, deleteFailed) else null,
+                boardActions = BoardActions(
+                    onSave = { vm.loadBoards(); pickingBoard = true },
+                    removeFrom = fromBoard?.takeIf { vm.removedFrom != it },
+                    onRemove = { vm.removeFrom(it) },
+                    message = vm.boardError
+                        ?: vm.removedFrom?.let { stringResource(R.string.pin_removed_from_board, it.name) }
+                        ?: vm.savedTo?.let { stringResource(R.string.pin_saved_to, it.name) },
+                ),
                 onOpenImage = onOpenImage,
                 onTag = onTag,
                 onUser = onUser,
@@ -91,6 +107,14 @@ fun PinDetailScreen(
         }
     }
 
+    if (pickingBoard) {
+        SaveToBoardDialog(
+            boards = vm.myBoards,
+            onPick = { vm.saveTo(it); pickingBoard = false },
+            onCreate = { vm.createBoardAndSave(it); pickingBoard = false },
+            onDismiss = { pickingBoard = false },
+        )
+    }
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
@@ -108,11 +132,20 @@ fun PinDetailScreen(
 
 private class OwnActions(val onEdit: () -> Unit, val onDelete: () -> Unit, val deleteFailed: Boolean)
 
+private class BoardActions(
+    val onSave: () -> Unit,
+    /** The board this pin was opened from, when it can be removed from it. */
+    val removeFrom: BoardName?,
+    val onRemove: (BoardName) -> Unit,
+    val message: String?,
+)
+
 @Composable
 private fun PinDetails(
     pin: Pin,
     webUrl: String,
     ownActions: OwnActions?,
+    boardActions: BoardActions,
     onOpenImage: () -> Unit,
     onTag: (String) -> Unit,
     onUser: (String) -> Unit,
@@ -135,22 +168,21 @@ private fun PinDetails(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (source != null) {
-                    FilledTonalButton(onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, source.toUri()))
-                    }) {
-                        Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = null)
-                        Spacer(Modifier.size(8.dp))
-                        Text(stringResource(R.string.pin_open_source))
-                    }
+                FilledTonalButton(onClick = boardActions.onSave) {
+                    Icon(painterResource(R.drawable.ic_bookmark), contentDescription = null)
+                    Spacer(Modifier.size(8.dp))
+                    Text(stringResource(R.string.pin_save))
                 }
-                OutlinedButton(onClick = {
+                OutlinedIconButton(onClick = {
                     val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, webUrl)
                     context.startActivity(Intent.createChooser(send, null))
                 }) {
-                    Icon(painterResource(R.drawable.ic_share), contentDescription = null)
-                    Spacer(Modifier.size(8.dp))
-                    Text(stringResource(R.string.pin_share))
+                    Icon(painterResource(R.drawable.ic_share), contentDescription = stringResource(R.string.pin_share))
+                }
+                if (source != null) {
+                    OutlinedIconButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, source.toUri())) }) {
+                        Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = stringResource(R.string.pin_open_source))
+                    }
                 }
                 if (ownActions != null) {
                     Spacer(Modifier.weight(1f))
@@ -164,6 +196,12 @@ private fun PinDetails(
             }
             if (ownActions?.deleteFailed == true) {
                 Text(stringResource(R.string.pin_delete_failed), color = MaterialTheme.colorScheme.error)
+            }
+            boardActions.message?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+            boardActions.removeFrom?.let { board ->
+                TextButton(onClick = { boardActions.onRemove(board) }) {
+                    Text(stringResource(R.string.pin_remove_from_board, board.name))
+                }
             }
             val description = pin.description?.trim()
             if (!description.isNullOrEmpty()) {
@@ -204,4 +242,40 @@ fun rememberFullImageRequest(pin: Pin): ImageRequest {
             .placeholderMemoryCacheKey(gridCacheKey(pin.id))
             .build()
     }
+}
+
+@Composable
+private fun SaveToBoardDialog(
+    boards: List<BoardName>?,
+    onPick: (BoardName) -> Unit,
+    onCreate: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var creating by rememberSaveable { mutableStateOf(false) }
+    if (creating) {
+        NewBoardDialog(onDismiss = { creating = false }, onCreate = onCreate)
+        return
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.pin_save_to)) },
+        text = {
+            if (boards == null) {
+                Box(Modifier.fillMaxWidth(), Alignment.Center) { PinryLoadingIndicator() }
+            } else {
+                LazyColumn(Modifier.heightIn(max = 360.dp)) {
+                    items(boards, key = { it.id }) { board ->
+                        ListItem(headlineContent = { Text(board.name) }, modifier = Modifier.clickable { onPick(board) })
+                    }
+                    item {
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.board_new), color = MaterialTheme.colorScheme.primary) },
+                            modifier = Modifier.clickable { creating = true },
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }

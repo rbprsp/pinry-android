@@ -2,9 +2,15 @@ package io.github.relony.pinry.ui.pin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.relony.pinry.data.BoardRepository
 import io.github.relony.pinry.data.PinChange
 import io.github.relony.pinry.data.PinRepository
+import io.github.relony.pinry.data.api.BoardName
 import io.github.relony.pinry.data.api.Pin
+import io.github.relony.pinry.ui.common.describe
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,6 +18,7 @@ import kotlinx.coroutines.launch
 
 class PinViewModel(
     private val repository: PinRepository,
+    private val boards: BoardRepository,
     private val id: Int,
     private val me: String,
 ) : ViewModel() {
@@ -32,6 +39,16 @@ class PinViewModel(
     val webUrl: String get() = repository.webUrl(id)
 
     fun isMine(pin: Pin) = pin.submitter.username == me
+
+    /** The user's boards for "Save to board"; null until loaded. */
+    var myBoards by mutableStateOf<List<BoardName>?>(null)
+        private set
+    var savedTo by mutableStateOf<BoardName?>(null)
+        private set
+    var removedFrom by mutableStateOf<BoardName?>(null)
+        private set
+    var boardError by mutableStateOf<String?>(null)
+        private set
 
     init {
         if (_pin.value == null) load()
@@ -68,6 +85,37 @@ class PinViewModel(
                 throw e
             } catch (e: Exception) {
                 _deleteFailed.value = true
+            }
+        }
+    }
+
+    fun loadBoards() = boardAction { myBoards = boards.names(me) }
+
+    fun saveTo(board: BoardName) = boardAction {
+        boards.addPin(board.id, id)
+        savedTo = board
+    }
+
+    fun createBoardAndSave(name: String) = boardAction {
+        val board = boards.create(name)
+        boards.addPin(board.id, id)
+        savedTo = BoardName(board.id, board.name)
+    }
+
+    fun removeFrom(board: BoardName) = boardAction {
+        boards.removePin(board.id, id)
+        removedFrom = board
+    }
+
+    private fun boardAction(action: suspend () -> Unit) {
+        boardError = null
+        viewModelScope.launch {
+            try {
+                action()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                boardError = describe(e)
             }
         }
     }

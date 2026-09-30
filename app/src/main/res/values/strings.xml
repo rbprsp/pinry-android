@@ -49,4 +49,22 @@
     <string name="share_unsupported">Nothing to pin in what was shared</string>
     <string name="share_logged_out">Log in to Pinry first</string>
     <string name="open_app">Open Pinry</string>
+    <string name="more">More</string>
+    <string name="board_new_button">New board</string>
+    <string name="boards_empty">No boards yet</string>
+    <string name="board_rename">Rename</string>
+    <string name="board_make_private">Make private</string>
+    <string name="board_make_public">Make public</string>
+    <string name="board_delete">Delete board</string>
+    <string name="board_delete_confirm_title">Delete this board?</string>
+    <string name="board_delete_confirm">Only the board goes away; its pins stay.</string>
+    <string name="pin_save">Save</string>
+    <string name="pin_save_to">Save to board</string>
+    <string name="pin_saved_to">Saved to %1$s</string>
+    <string name="pin_remove_from_board">Remove from %1$s</string>
+    <string name="pin_removed_from_board">Removed from %1$s</string>
+    <plurals name="board_pins">
+        <item quantity="one">%d pin</item>
+        <item quantity="other">%d pins</item>
+    </plurals>
 </resources>
