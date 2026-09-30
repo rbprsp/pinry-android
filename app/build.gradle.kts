@@ -54,6 +54,10 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.okhttp)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.telephoto.zoomable.image.coil)
 
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
