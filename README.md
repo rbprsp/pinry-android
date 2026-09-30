@@ -14,11 +14,11 @@ An unofficial Android app for [Pinry](https://github.com/pinry/pinry), the self-
 </div>
 
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="19%" alt="Feed">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="19%" alt="Pin">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="19%" alt="Boards">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="19%" alt="New pin">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="19%" alt="Settings">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" width="19%" alt="Feed">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" width="19%" alt="Pin">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" width="19%" alt="Boards">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpg" width="19%" alt="New pin">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpg" width="19%" alt="Dark theme">
 </p>
 
 ## Features
@@ -74,7 +74,6 @@ Issues and pull requests are welcome on [GitHub](https://github.com/rbprsp/pinry
 
 - [Pinry](https://github.com/pinry/pinry), the server this app is for, and whose logo is the app icon (BSD 2-Clause).
 - The icon file comes from [homarr-labs/dashboard-icons](https://github.com/homarr-labs/dashboard-icons) (Apache 2.0).
-- Screenshots show public-domain artworks from [The Metropolitan Museum of Art's Open Access](https://www.metmuseum.org/about-the-met/policies-and-documents/open-access) collection.
 
 Details in [NOTICE](NOTICE).
 
