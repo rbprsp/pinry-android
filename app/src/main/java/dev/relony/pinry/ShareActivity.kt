@@ -1,5 +1,6 @@
 package dev.relony.pinry
 
+import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -78,7 +79,9 @@ class ShareActivity : ComponentActivity() {
 private fun sharedSource(intent: Intent): CreateSource? {
     if (intent.action != Intent.ACTION_SEND) return null
     if (intent.type?.startsWith("image/") == true) {
+        // Only content:// — a file:// URI could name this app's own private files (the session).
         return IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+            ?.takeIf { it.scheme == ContentResolver.SCHEME_CONTENT }
             ?.let { CreateSource.Local(it.toString()) }
     }
     return intent.getStringExtra(Intent.EXTRA_TEXT)?.let(::firstUrl)?.let { CreateSource.Url(it) }

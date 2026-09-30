@@ -37,6 +37,9 @@ android {
 
     buildTypes {
         release {
+            // The Baseline Profile plugin makes release profileable for its benchmarks; published
+            // builds shouldn't be (benchmarkRelease still is).
+            isProfileable = false
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -48,6 +51,11 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    lint {
+        // Compose is pinned to the version material3's Expressive alpha requires; Dependabot proposes updates.
+        disable += "GradleDependency"
     }
 }
 
@@ -79,6 +87,7 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.telephoto.zoomable.image.coil)
     implementation(libs.androidx.palette)
+    implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.profileinstaller)
     baselineProfile(project(":baselineprofile"))
 

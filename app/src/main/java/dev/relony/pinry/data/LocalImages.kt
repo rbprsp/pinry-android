@@ -4,10 +4,10 @@ import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
-import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import android.webkit.MimeTypeMap
+import androidx.exifinterface.media.ExifInterface
 import java.io.File
 import java.io.IOException
 import java.io.OutputStream
@@ -38,7 +38,11 @@ object LocalImages {
 
         try {
             val convert = heic || (canConvert && mime == "image/jpeg" && isRotated(resolver, uri))
-            if (convert) convertToJpeg(resolver, uri, target) else copyStream(resolver, uri, target)
+            if (convert && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                convertToJpeg(resolver, uri, target)
+            } else {
+                copyStream(resolver, uri, target)
+            }
         } catch (e: Exception) {
             // After process death the grant is gone (SecurityException); the earlier copy is still good.
             if (!target.exists()) throw e

@@ -18,6 +18,7 @@ junit = "4.13.2"
 coil = "3.6.3"
 telephoto = "0.19.0"
 palette = "1.0.0"
+exifinterface = "1.4.2"
 benchmark = "1.5.0"
 profileinstaller = "1.4.1"
 uiautomator = "2.4.0"
@@ -52,6 +53,7 @@ androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstall
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmark" }
 androidx-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "testExtJunit" }
+androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
 androidx-palette = { module = "androidx.palette:palette-ktx", version.ref = "palette" }
 telephoto-zoomable-image-coil = { module = "me.saket.telephoto:zoomable-image-coil3", version.ref = "telephoto" }
 

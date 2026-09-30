@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Self-hosted servers: allow plain HTTP on the LAN and certificates from user-installed CAs. -->
-<network-security-config>
-    <base-config cleartextTrafficPermitted="true">
+<!--
+  Deliberate for a self-hosted client (see SECURITY.md):
+  - cleartext: Pinry often runs on a LAN over plain http://; the login screen warns when it's used;
+  - user CAs: servers with a private or self-signed CA installed by the user must work.
+-->
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <base-config
+        cleartextTrafficPermitted="true"
+        tools:ignore="InsecureBaseConfiguration">
         <trust-anchors>
             <certificates src="system" />
-            <certificates src="user" />
+            <certificates
+                src="user"
+                tools:ignore="AcceptsUserCertificates" />
         </trust-anchors>
     </base-config>
 </network-security-config>

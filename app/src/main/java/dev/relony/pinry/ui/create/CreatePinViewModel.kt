@@ -1,5 +1,6 @@
 package dev.relony.pinry.ui.create
 
+import android.app.Application
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,7 +43,7 @@ sealed interface CreateSource {
 }
 
 class CreatePinViewModel(
-    private val context: Context,
+    private val app: Application,
     private val pins: PinRepository,
     private val boards: BoardRepository,
     private val tagRepository: TagRepository,
@@ -89,7 +90,7 @@ class CreatePinViewModel(
         when (source) {
             is CreateSource.Local -> viewModelScope.launch {
                 try {
-                    localImage = withContext(Dispatchers.IO) { LocalImages.copy(context, source.uri.toUri()) }
+                    localImage = withContext(Dispatchers.IO) { LocalImages.copy(app, source.uri.toUri()) }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -183,4 +184,4 @@ class CreatePinViewModel(
 }
 
 fun AppContainer.createPinViewModel(context: Context, me: String, source: CreateSource) =
-    CreatePinViewModel(context.applicationContext, pins, boards, tags, imageUrls, me, source)
+    CreatePinViewModel(context.applicationContext as Application, pins, boards, tags, imageUrls, me, source)

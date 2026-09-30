@@ -59,6 +59,7 @@ fun LoginScreen(vm: LoginViewModel) {
                 label = stringResource(R.string.login_server),
                 placeholder = "pinry.example.com",
                 error = vm.errors[AuthRepository.FIELD_SERVER],
+                hint = if (vm.server.trim().startsWith("http://", ignoreCase = true)) stringResource(R.string.login_http_warning) else null,
                 keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next, autoCorrectEnabled = false),
             )
             Field(
@@ -102,6 +103,7 @@ private fun Field(
     label: String,
     error: String?,
     keyboard: KeyboardOptions,
+    hint: String? = null,
     placeholder: String? = null,
     password: Boolean = false,
     onDone: () -> Unit = {},
@@ -112,7 +114,7 @@ private fun Field(
         label = { Text(label) },
         placeholder = placeholder?.let { { Text(it) } },
         isError = error != null,
-        supportingText = error?.let { { Text(it) } },
+        supportingText = (error ?: hint)?.let { { Text(it) } },
         singleLine = true,
         keyboardOptions = keyboard,
         keyboardActions = KeyboardActions(onDone = { onDone() }),

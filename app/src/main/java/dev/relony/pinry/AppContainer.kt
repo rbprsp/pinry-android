@@ -32,9 +32,14 @@ class AppContainer(context: Context) {
     private val server = ServerContext()
     private val cookies = HostCookieJar(server)
 
-    val http: OkHttpClient = OkHttpClient.Builder()
+    /** No session: used for arbitrary pages and images (link previews). */
+    private val anonymousHttp: OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(UserAgent("PinryAndroid/${BuildConfig.VERSION_NAME} (+https://github.com/rbprsp/pinry-android)"))
+        .build()
+
+    /** Shares the anonymous client's connections; adds the session for the configured server only. */
+    val http: OkHttpClient = anonymousHttp.newBuilder()
         .cookieJar(cookies)
-        .addInterceptor(UserAgent("PinryAndroid/${BuildConfig.VERSION_NAME} (self-hosted Pinry client; +https://github.com/pinry/pinry)"))
         .addInterceptor(AuthInterceptor(server))
         .addInterceptor(SlowCallTimeouts())
         .build()
@@ -56,7 +61,8 @@ class AppContainer(context: Context) {
     val pins = PinRepository(::api, ::baseUrl)
     val boards = BoardRepository(::api, ::baseUrl)
     val tags = TagRepository(::api)
-    val imageUrls = ImageUrlResolver(http)
+    // A shared link could point at the Pinry server itself; resolving it must not act as the user.
+    val imageUrls = ImageUrlResolver(anonymousHttp)
     val settings = SettingsStore(context.settingsDataStore)
 
     init {

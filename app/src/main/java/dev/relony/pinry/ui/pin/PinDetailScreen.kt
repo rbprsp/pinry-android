@@ -1,5 +1,6 @@
 package dev.relony.pinry.ui.pin
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.core.animateDp
@@ -164,7 +165,8 @@ private fun PinDetails(
     onUser: (String) -> Unit,
 ) {
     val context = LocalContext.current
-    val source = pin.referer ?: pin.url
+    // Pin fields are written by any user of the server: only web links are opened.
+    val source = (pin.referer ?: pin.url)?.takeIf { it.startsWith("https://", true) || it.startsWith("http://", true) }
 
     // Square once shown; rounded like the grid card while flying in from it.
     val corner by LocalNavAnimatedContentScope.current.transition.animateDp(label = "corner") { state ->
@@ -196,7 +198,11 @@ private fun PinDetails(
                     }))
                     if (source != null) {
                         add(Action(R.drawable.ic_open_in_new, stringResource(R.string.pin_open_source), {
+                            try {
                             context.startActivity(Intent(Intent.ACTION_VIEW, source.toUri()))
+                        } catch (_: ActivityNotFoundException) {
+                            // No browser installed; nothing sensible to do.
+                        }
                         }))
                     }
                     if (ownActions != null) {
