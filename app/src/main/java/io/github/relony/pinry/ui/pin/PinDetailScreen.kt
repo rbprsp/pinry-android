@@ -1,6 +1,17 @@
 package io.github.relony.pinry.ui.pin
 
 import android.content.Intent
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.core.animateDp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
+import io.github.relony.pinry.ui.common.Action
+import io.github.relony.pinry.ui.common.ActionGroup
+import io.github.relony.pinry.ui.common.PinCardCorner
+import io.github.relony.pinry.ui.common.avatarShape
+import io.github.relony.pinry.ui.common.sharedPinImage
+import io.github.relony.pinry.ui.theme.SeededTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,17 +31,13 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -79,7 +86,11 @@ fun PinDetailScreen(
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var pickingBoard by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(deleted) { if (deleted) onBack() }
+    val seed = rememberImageSeed(pin?.let { it.image.thumbnail?.image ?: it.image.image })
 
+    // The screen takes its colors from the image once they're known.
+    SeededTheme(seed) {
+    Surface(Modifier.fillMaxSize()) {
     Box(Modifier.fillMaxSize()) {
         when (val p = pin) {
             null -> Box(Modifier.fillMaxSize(), Alignment.Center) {
@@ -105,6 +116,8 @@ fun PinDetailScreen(
         FilledTonalIconButton(onClick = onBack, modifier = Modifier.statusBarsPadding().padding(8.dp)) {
             Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = stringResource(R.string.back))
         }
+    }
+    }
     }
 
     if (pickingBoard) {
@@ -153,12 +166,19 @@ private fun PinDetails(
     val context = LocalContext.current
     val source = pin.referer ?: pin.url
 
+    // Square once shown; rounded like the grid card while flying in from it.
+    val corner by LocalNavAnimatedContentScope.current.transition.animateDp(label = "corner") { state ->
+        if (state == EnterExitState.Visible) 0.dp else PinCardCorner
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         AsyncImage(
             model = rememberFullImageRequest(pin),
-            contentDescription = pin.description,
+            contentDescription = pin.description?.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.pin_by, pin.submitter.username),
             contentScale = ContentScale.Crop,
             modifier = Modifier
+                .sharedPinImage(pin.id, corner)
+                .clip(RoundedCornerShape(corner))
                 .fillMaxWidth()
                 .aspectRatio(pin.image.aspectRatio())
                 .clickable(onClick = onOpenImage),
@@ -167,33 +187,25 @@ private fun PinDetails(
             Modifier.padding(16.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                FilledTonalButton(onClick = boardActions.onSave) {
-                    Icon(painterResource(R.drawable.ic_bookmark), contentDescription = null)
-                    Spacer(Modifier.size(8.dp))
-                    Text(stringResource(R.string.pin_save))
-                }
-                OutlinedIconButton(onClick = {
-                    val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, webUrl)
-                    context.startActivity(Intent.createChooser(send, null))
-                }) {
-                    Icon(painterResource(R.drawable.ic_share), contentDescription = stringResource(R.string.pin_share))
-                }
-                if (source != null) {
-                    OutlinedIconButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, source.toUri())) }) {
-                        Icon(painterResource(R.drawable.ic_open_in_new), contentDescription = stringResource(R.string.pin_open_source))
+            ActionGroup(
+                buildList {
+                    add(Action(R.drawable.ic_bookmark, stringResource(R.string.pin_save), boardActions.onSave, primary = true))
+                    add(Action(R.drawable.ic_share, stringResource(R.string.pin_share), {
+                        val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, webUrl)
+                        context.startActivity(Intent.createChooser(send, null))
+                    }))
+                    if (source != null) {
+                        add(Action(R.drawable.ic_open_in_new, stringResource(R.string.pin_open_source), {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, source.toUri()))
+                        }))
                     }
-                }
-                if (ownActions != null) {
-                    Spacer(Modifier.weight(1f))
-                    IconButton(onClick = ownActions.onEdit) {
-                        Icon(painterResource(R.drawable.ic_edit), contentDescription = stringResource(R.string.pin_edit))
+                    if (ownActions != null) {
+                        add(Action(R.drawable.ic_edit, stringResource(R.string.pin_edit), ownActions.onEdit))
+                        add(Action(R.drawable.ic_delete, stringResource(R.string.pin_delete), ownActions.onDelete))
                     }
-                    IconButton(onClick = ownActions.onDelete) {
-                        Icon(painterResource(R.drawable.ic_delete), contentDescription = stringResource(R.string.pin_delete))
-                    }
-                }
-            }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
             if (ownActions?.deleteFailed == true) {
                 Text(stringResource(R.string.pin_delete_failed), color = MaterialTheme.colorScheme.error)
             }
@@ -223,7 +235,7 @@ private fun PinDetails(
                 AsyncImage(
                     model = gravatarUrl(pin.submitter.gravatar, 96),
                     contentDescription = null,
-                    modifier = Modifier.size(40.dp).clip(CircleShape),
+                    modifier = Modifier.size(40.dp).clip(avatarShape()),
                 )
                 Text(pin.submitter.username, style = MaterialTheme.typography.titleMedium)
             }

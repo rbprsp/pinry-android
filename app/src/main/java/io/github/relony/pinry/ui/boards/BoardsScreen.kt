@@ -34,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -47,6 +48,8 @@ import io.github.relony.pinry.data.api.Board
 import io.github.relony.pinry.ui.common.LocalToolbarInset
 import io.github.relony.pinry.ui.common.PinryLoadingIndicator
 import io.github.relony.pinry.ui.common.RefreshBox
+import io.github.relony.pinry.ui.common.boardShape
+import io.github.relony.pinry.ui.theme.screenTitle
 import io.github.relony.pinry.ui.common.urlFor
 import io.github.relony.pinry.ui.create.NewBoardDialog
 
@@ -68,7 +71,7 @@ fun BoardsScreen(vm: BoardsViewModel, onOpen: (Board) -> Unit) {
         ) {
             item(key = "header", span = { GridItemSpan(maxLineSpan) }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.tab_boards), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.tab_boards), style = MaterialTheme.typography.screenTitle, modifier = Modifier.weight(1f))
                     FilledTonalButton(onClick = { creating = true }) { Text(stringResource(R.string.board_new_button)) }
                 }
             }
@@ -108,13 +111,17 @@ private fun BoardCard(board: Board, onClick: () -> Unit, modifier: Modifier = Mo
     ) {
         Column {
             Box(Modifier.fillMaxWidth().aspectRatio(1f).background(MaterialTheme.colorScheme.surfaceContainerHigh)) {
-                board.cover?.let { cover ->
+                val shape = boardShape(board.id)
+                val cover = board.cover
+                if (cover != null) {
                     AsyncImage(
                         model = cover.image.urlFor(600),
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().padding(12.dp).clip(shape),
                     )
+                } else {
+                    Box(Modifier.fillMaxSize().padding(28.dp).clip(shape).background(MaterialTheme.colorScheme.secondaryContainer))
                 }
                 if (board.isPrivate) {
                     Icon(

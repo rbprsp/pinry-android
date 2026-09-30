@@ -22,9 +22,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val auth = (application as PinryApp).container.auth
+        val container = (application as PinryApp).container
+        val auth = container.auth
         setContent {
-            PinryTheme {
+            // Until settings are read (a few ms) the window background shows, not a wrong theme.
+            val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
+            PinryTheme(settings ?: return@setContent) {
                 val state by auth.state.collectAsStateWithLifecycle()
                 val scope = rememberCoroutineScope()
                 Surface(Modifier.fillMaxSize()) {
@@ -34,7 +37,7 @@ class MainActivity : ComponentActivity() {
                             viewModel { LoginViewModel(auth, s.lastServer) }
                         )
                         is SessionState.LoggedIn -> PinryAppUi(
-                            username = s.session.username,
+                            session = s.session,
                             onLogout = { scope.launch { auth.logout() } },
                         )
                     }

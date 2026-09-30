@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,8 +40,8 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import io.github.relony.pinry.R
 import io.github.relony.pinry.data.api.Pin
+import io.github.relony.pinry.ui.theme.LocalAppSettings
 
-private val MinCellWidth = 160.dp
 private val Spacing = 8.dp
 
 /** Masonry grid of pins that asks for the next page when the end comes within 10 items. */
@@ -66,7 +67,8 @@ fun PinGrid(
     BoxWithConstraints(modifier) {
         val direction = LocalLayoutDirection.current
         val usable = maxWidth - contentPadding.calculateStartPadding(direction) - contentPadding.calculateEndPadding(direction)
-        val columns = ((usable + Spacing) / (MinCellWidth + Spacing)).toInt().coerceAtLeast(1)
+        val minCellWidth = LocalAppSettings.current.density.minCellWidthDp.dp
+        val columns = ((usable + Spacing) / (minCellWidth + Spacing)).toInt().coerceAtLeast(1)
         val cellWidthPx = with(LocalDensity.current) { ((usable - Spacing * (columns - 1)) / columns).roundToPx() }
 
         LazyVerticalStaggeredGrid(
@@ -109,12 +111,14 @@ fun PinCard(pin: Pin, widthPx: Int, onClick: () -> Unit, modifier: Modifier = Mo
     Column(modifier) {
         Surface(
             onClick = onClick,
-            shape = MaterialTheme.shapes.large,
+            shape = RoundedCornerShape(PinCardCorner),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            modifier = Modifier.sharedPinImage(pin.id, PinCardCorner),
         ) {
             AsyncImage(
                 model = request,
-                contentDescription = pin.description,
+                contentDescription = pin.description?.takeIf { it.isNotBlank() }
+                    ?: stringResource(R.string.pin_by, pin.submitter.username),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxWidth().aspectRatio(pin.image.gridAspectRatio()),
             )

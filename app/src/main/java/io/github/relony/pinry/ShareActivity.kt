@@ -43,7 +43,8 @@ class ShareActivity : ComponentActivity() {
         }
         val container = (application as PinryApp).container
         setContent {
-            PinryTheme {
+            val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
+            PinryTheme(settings ?: return@setContent) {
                 val state by container.auth.state.collectAsStateWithLifecycle()
                 Surface(Modifier.fillMaxSize()) {
                     when (val s = state) {

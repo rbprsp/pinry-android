@@ -22,6 +22,7 @@ import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.runtime.Composable
@@ -36,6 +37,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -96,6 +98,7 @@ fun <K> ToolbarScaffold(
                         checked = tab.key == selected,
                         onCheckedChange = { onSelect(tab.key) },
                         shapes = IconButtonDefaults.toggleableShapes(),
+                        colors = toolbarTabColors(),
                     ) {
                         Icon(painterResource(tab.icon), contentDescription = stringResource(tab.label))
                     }
@@ -115,6 +118,8 @@ fun <K> ToolbarScaffold(
                         Icon(
                             painterResource(R.drawable.ic_add),
                             contentDescription = stringResource(R.string.create_title),
+                            // The container goes from primaryContainer to primary as the menu opens.
+                            tint = lerp(MaterialTheme.colorScheme.onPrimaryContainer, MaterialTheme.colorScheme.onPrimary, checkedProgress),
                             modifier = Modifier.graphicsLayer { rotationZ = 45f * checkedProgress },
                         )
                     }

@@ -3,17 +3,22 @@ package io.github.relony.pinry.ui
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,12 +32,14 @@ import io.github.relony.pinry.AppContainer
 import io.github.relony.pinry.PinryApp
 import io.github.relony.pinry.R
 import io.github.relony.pinry.data.PinFilter
+import io.github.relony.pinry.data.Session
 import io.github.relony.pinry.data.api.BoardName
 import io.github.relony.pinry.ui.boards.BoardFeedScreen
 import io.github.relony.pinry.ui.boards.BoardViewModel
 import io.github.relony.pinry.ui.boards.BoardsScreen
 import io.github.relony.pinry.ui.boards.BoardsViewModel
 import io.github.relony.pinry.ui.common.FabAction
+import io.github.relony.pinry.ui.common.LocalSharedTransitionScope
 import io.github.relony.pinry.ui.common.ToolbarScaffold
 import io.github.relony.pinry.ui.common.ToolbarTab
 import io.github.relony.pinry.ui.create.CreatePinScreen
@@ -45,6 +52,11 @@ import io.github.relony.pinry.ui.pin.EditPinViewModel
 import io.github.relony.pinry.ui.pin.ImageViewerScreen
 import io.github.relony.pinry.ui.pin.PinDetailScreen
 import io.github.relony.pinry.ui.pin.PinViewModel
+import io.github.relony.pinry.ui.settings.SettingsScreen
+import io.github.relony.pinry.ui.theme.LocalAppSettings
+import io.github.relony.pinry.ui.theme.screenTitle
+import kotlinx.coroutines.launch
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import kotlinx.serialization.Serializable
 
 @Serializable data object HomeKey : NavKey
@@ -56,6 +68,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class ViewerKey(val id: Int) : NavKey
 @Serializable data class CreateKey(val source: CreateSource) : NavKey
 @Serializable data class EditPinKey(val id: Int) : NavKey
+@Serializable data object SettingsKey : NavKey
 
 private val tabs = listOf(
     ToolbarTab<NavKey>(HomeKey, R.drawable.ic_home, R.string.tab_home),
@@ -63,9 +76,12 @@ private val tabs = listOf(
     ToolbarTab<NavKey>(ProfileKey, R.drawable.ic_profile, R.string.tab_profile),
 )
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun PinryAppUi(username: String, onLogout: () -> Unit) {
+fun PinryAppUi(session: Session, onLogout: () -> Unit) {
     val container = appContainer()
+    val username = session.username
+    val scope = rememberCoroutineScope()
     // Home is always the root; another tab sits on top of it, so Back from a tab returns Home.
     val backStack = rememberNavBackStack(HomeKey)
     val selectedTab = backStack.lastOrNull { key -> tabs.any { it.key == key } }
@@ -92,9 +108,12 @@ fun PinryAppUi(username: String, onLogout: () -> Unit) {
             FabAction(R.drawable.ic_link, R.string.create_from_url) { open(CreateKey(CreateSource.Url(""))) },
         ),
     ) {
+        SharedTransitionLayout {
+        CompositionLocalProvider(LocalSharedTransitionScope provides this) {
         NavDisplay(
             backStack = backStack,
             onBack = back,
+            sharedTransitionScope = this,
             entryDecorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator(),
@@ -113,7 +132,7 @@ fun PinryAppUi(username: String, onLogout: () -> Unit) {
                     FeedScreen(
                         feedViewModel(container, PinFilter.User(username)),
                         onOpen = { open(PinKey(it.id)) },
-                        header = { ProfileHeader(username, onLogout) },
+                        header = { ProfileHeader(username, onSettings = { open(SettingsKey) }) },
                     )
                 }
                 entry<FeedKey> { key ->
@@ -159,8 +178,19 @@ fun PinryAppUi(username: String, onLogout: () -> Unit) {
                 entry<EditPinKey> { key ->
                     EditPinScreen(viewModel { EditPinViewModel(container.pins, container.tags, key.id) }, onBack = back)
                 }
+                entry<SettingsKey> {
+                    SettingsScreen(
+                        settings = LocalAppSettings.current,
+                        onChange = { transform -> scope.launch { container.settings.update(transform) } },
+                        account = stringResource(R.string.settings_account_line, username, session.baseUrl.toHttpUrl().host),
+                        onLogout = onLogout,
+                        onBack = back,
+                    )
+                }
             },
         )
+        }
+        }
     }
 }
 
@@ -179,13 +209,14 @@ private fun PinFilter.title(): String? = when (this) {
 }
 
 @Composable
-private fun ProfileHeader(username: String, onLogout: () -> Unit) {
+private fun ProfileHeader(username: String, onSettings: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(username, style = MaterialTheme.typography.headlineMedium)
-        OutlinedButton(onClick = onLogout) { Text(stringResource(R.string.logout)) }
+        Text(username, style = MaterialTheme.typography.screenTitle, modifier = Modifier.weight(1f))
+        IconButton(onClick = onSettings) {
+            Icon(painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
+        }
     }
 }

@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.telephoto.zoomable.image.coil)
+    implementation(libs.androidx.palette)
 
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)

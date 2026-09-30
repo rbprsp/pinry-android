@@ -15,6 +15,7 @@ import io.github.relony.pinry.data.net.HostCookieJar
 import io.github.relony.pinry.data.net.ServerContext
 import io.github.relony.pinry.data.net.SlowCallTimeouts
 import io.github.relony.pinry.data.net.UserAgent
+import io.github.relony.pinry.ui.settings.SettingsStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -23,6 +24,7 @@ import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 
 private val Context.sessionDataStore by preferencesDataStore(name = "session")
+private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 
 /** App-wide singletons. */
 class AppContainer(context: Context) {
@@ -55,6 +57,7 @@ class AppContainer(context: Context) {
     val boards = BoardRepository(::api, ::baseUrl)
     val tags = TagRepository(::api)
     val imageUrls = ImageUrlResolver(http)
+    val settings = SettingsStore(context.settingsDataStore)
 
     init {
         scope.launch { auth.restore() }
