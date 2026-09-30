@@ -1,0 +1,4 @@
+<resources>
+    <!-- Only visible before Compose draws its first frame. -->
+    <style name="Theme.Pinry" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

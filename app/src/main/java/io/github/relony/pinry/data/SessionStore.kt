@@ -1,0 +1,42 @@
+package io.github.relony.pinry.data
+
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import io.github.relony.pinry.data.api.PinryJson
+import kotlinx.coroutines.flow.first
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class Session(
+    val baseUrl: String,
+    val username: String,
+    val token: String,
+    /** Cookies in `Set-Cookie` form, restored with `Cookie.parse(baseUrl, …)`. */
+    val cookies: List<String> = emptyList(),
+)
+
+class SessionStore(private val store: DataStore<Preferences>) {
+    suspend fun read(): Session? = store.data.first()[SESSION]
+        ?.let { runCatching { PinryJson.decodeFromString<Session>(it) }.getOrNull() }
+
+    /** Kept after logout so the login form can be prefilled. */
+    suspend fun lastServer(): String? = store.data.first()[LAST_SERVER]
+
+    suspend fun write(session: Session) {
+        store.edit {
+            it[SESSION] = PinryJson.encodeToString(session)
+            it[LAST_SERVER] = session.baseUrl
+        }
+    }
+
+    suspend fun clear() {
+        store.edit { it.remove(SESSION) }
+    }
+
+    private companion object {
+        val SESSION = stringPreferencesKey("session")
+        val LAST_SERVER = stringPreferencesKey("last_server")
+    }
+}
