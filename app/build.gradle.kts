@@ -13,11 +13,11 @@ val releaseKey = rootProject.file("keystore.properties").takeIf { it.exists() }
     ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
 
 android {
-    namespace = "io.github.relony.pinry"
+    namespace = "dev.relony.pinry"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "io.github.relony.pinry"
+        applicationId = "dev.relony.pinry"
         minSdk = 26
         targetSdk = 37
         versionCode = 1

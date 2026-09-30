@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "io.github.relony.pinry.baselineprofile"
+    namespace = "dev.relony.pinry.baselineprofile"
     compileSdk = 37
 
     defaultConfig {
