@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an idea
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: The problem or use case, rather than a specific solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could the app help?
+  - type: checkboxes
+    id: server
+    attributes:
+      label: Server support
+      options:
+        - label: This works in Pinry's web interface (the app can only do what the Pinry API offers)

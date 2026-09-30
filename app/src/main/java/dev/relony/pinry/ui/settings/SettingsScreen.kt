@@ -40,6 +40,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.materialkolor.PaletteStyle
+import dev.relony.pinry.BuildConfig
 import dev.relony.pinry.R
 import dev.relony.pinry.ui.common.BackTopBar
 import dev.relony.pinry.ui.theme.DefaultSeed
@@ -116,6 +117,11 @@ fun SettingsScreen(
                 Text(account, style = MaterialTheme.typography.bodyLarge)
                 OutlinedButton(onClick = onLogout) { Text(stringResource(R.string.logout)) }
             }
+            Text(
+                stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

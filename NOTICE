@@ -1,0 +1,53 @@
+Pinry for Android
+Copyright (C) 2026 relony
+
+Licensed under the GNU General Public License v3.0 or later; see LICENSE.
+
+This is an unofficial client. It is not affiliated with or endorsed by the
+Pinry project.
+
+Third-party material
+====================
+
+App icon: the Pinry logo
+------------------------
+Obtained as png/pinry.png from homarr-labs/dashboard-icons
+(https://github.com/homarr-labs/dashboard-icons, Apache License 2.0).
+Modified: the "P" was cut out of its tile and placed on an adaptive-icon
+background (app/src/main/res/mipmap-*).
+
+The logo belongs to the Pinry project (https://github.com/pinry/pinry):
+
+    The BSD 2-Clause License
+
+    Copyright (c) 2019, Pinry's Contributors
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without modification,
+    are permitted provided that the following conditions are met:
+
+    1.  Redistributions of source code must retain the above copyright notice,
+        this list of conditions and the following disclaimer.
+
+    2.  Redistributions in binary form must reproduce the above copyright notice,
+        this list of conditions and the following disclaimer in the documentation
+        and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+    THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Libraries
+---------
+The app is built with AndroidX, Jetpack Compose and Material 3 (Apache 2.0),
+OkHttp and Retrofit (Apache 2.0), kotlinx.serialization and kotlinx.coroutines
+(Apache 2.0), Coil (Apache 2.0), telephoto (Apache 2.0) and MaterialKolor
+(MIT). Their licenses apply to the parts of the APK they make up; see each
+project for its full license text.

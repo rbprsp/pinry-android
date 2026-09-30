@@ -76,6 +76,7 @@
     <string name="settings_palette">Palette style</string>
     <string name="settings_grid">Grid</string>
     <string name="settings_account">Account</string>
+    <string name="settings_version">Pinry for Android %1$s</string>
     <string name="settings_account_line">%1$s on %2$s</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
