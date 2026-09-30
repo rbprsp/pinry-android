@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "pinry-app"
 include(":app")
+include(":baselineprofile")

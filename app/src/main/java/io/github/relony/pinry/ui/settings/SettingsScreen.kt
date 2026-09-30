@@ -26,13 +26,11 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -161,15 +159,17 @@ private fun Swatch(color: Color, selected: Boolean, onClick: () -> Unit) {
 /** Any hue at a fixed, pleasant saturation; saved when the drag ends so DataStore isn't hit every frame. */
 @Composable
 private fun HueSlider(seed: Int, onPick: (Int) -> Unit) {
-    val hsv = remember(seed) { FloatArray(3).also { android.graphics.Color.colorToHSV(seed, it) } }
-    var hue by remember(seed) { mutableFloatStateOf(hsv[0]) }
+    // Re-created when the seed changes elsewhere (a swatch), so the thumb follows it.
+    val state = remember(seed) {
+        val hsv = FloatArray(3).also { android.graphics.Color.colorToHSV(seed, it) }
+        SliderState(value = hsv[0], trackRange = 0f..359f)
+    }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.size(28.dp).clip(CircleShape).background(Color.hsv(hue, 0.65f, 0.85f)))
+        Box(Modifier.size(28.dp).clip(CircleShape).background(Color.hsv(state.value, 0.65f, 0.85f)))
         Slider(
-            value = hue,
-            onValueChange = { hue = it },
-            onValueChangeFinished = { onPick(Color.hsv(hue, 0.65f, 0.85f).toArgb()) },
-            valueRange = 0f..359f,
+            state = state,
+            onValueChange = { state.value = it },
+            onValueChangeFinished = { onPick(Color.hsv(state.value, 0.65f, 0.85f).toArgb()) },
             modifier = Modifier.weight(1f),
         )
     }

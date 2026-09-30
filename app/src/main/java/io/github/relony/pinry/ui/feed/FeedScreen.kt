@@ -1,5 +1,6 @@
 package io.github.relony.pinry.ui.feed
 
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +43,8 @@ fun FeedScreen(
     header: (@Composable () -> Unit)? = null,
 ) {
     val state by vm.pager.state.collectAsStateWithLifecycle()
+    // "Fully drawn" for startup metrics: the first feed on screen has pins.
+    ReportDrawnWhen { state.items.isNotEmpty() }
     val statusBar = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + LocalToolbarInset.current
     val top = if (title == null) statusBar + 8.dp else 8.dp
