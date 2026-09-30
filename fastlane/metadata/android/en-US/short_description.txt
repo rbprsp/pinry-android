@@ -1,0 +1,1 @@
+Browse and pin to your self-hosted Pinry server

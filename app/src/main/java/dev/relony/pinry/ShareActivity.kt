@@ -48,9 +48,19 @@ class ShareActivity : ComponentActivity() {
             PinryTheme(settings ?: return@setContent) {
                 val state by container.auth.state.collectAsStateWithLifecycle()
                 Surface(Modifier.fillMaxSize()) {
-                    when (val s = state) {
-                        SessionState.Loading -> Unit
-                        is SessionState.LoggedOut -> Column(
+                    val s = state
+                    when {
+                        s == SessionState.Loading -> Unit
+                        s is SessionState.LoggedIn && !s.session.isAnonymous -> CreatePinScreen(
+                            viewModel { container.createPinViewModel(this@ShareActivity, checkNotNull(s.session.username), source) },
+                            onClose = ::finish,
+                            onDone = {
+                                Toast.makeText(this@ShareActivity, R.string.share_done, Toast.LENGTH_SHORT).show()
+                                finish()
+                            },
+                        )
+                        // Logged out, or browsing without an account: pinning needs one.
+                        else -> Column(
                             Modifier.fillMaxSize().padding(24.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -61,14 +71,6 @@ class ShareActivity : ComponentActivity() {
                                 finish()
                             }) { Text(stringResource(R.string.open_app)) }
                         }
-                        is SessionState.LoggedIn -> CreatePinScreen(
-                            viewModel { container.createPinViewModel(this@ShareActivity, s.session.username, source) },
-                            onClose = ::finish,
-                            onDone = {
-                                Toast.makeText(this@ShareActivity, R.string.share_done, Toast.LENGTH_SHORT).show()
-                                finish()
-                            },
-                        )
                     }
                 }
             }

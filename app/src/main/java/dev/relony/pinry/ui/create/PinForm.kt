@@ -39,6 +39,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import dev.relony.pinry.R
 import dev.relony.pinry.data.api.BoardName
+import dev.relony.pinry.ui.common.tagLabel
 
 /** Description, tags and privacy: the fields shared by creating and editing a pin. */
 class PinFormState(description: String = "", tags: List<String> = emptyList(), isPrivate: Boolean = false) {
@@ -118,7 +119,7 @@ private fun TagEditor(form: PinFormState, allTags: List<String>) {
         val suggestions = form.suggestions(allTags)
         if (suggestions.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                suggestions.forEach { SuggestionChip(onClick = { form.addTag(it) }, label = { Text("#$it") }) }
+                suggestions.forEach { SuggestionChip(onClick = { form.addTag(it) }, label = { Text(tagLabel(it)) }) }
             }
         }
         if (form.tags.isNotEmpty()) {
@@ -127,11 +128,11 @@ private fun TagEditor(form: PinFormState, allTags: List<String>) {
                     InputChip(
                         selected = false,
                         onClick = { form.removeTag(tag) },
-                        label = { Text("#$tag") },
+                        label = { Text(tagLabel(tag)) },
                         trailingIcon = {
                             Icon(
                                 painterResource(R.drawable.ic_close),
-                                contentDescription = stringResource(R.string.pin_remove_tag, tag),
+                                contentDescription = stringResource(R.string.pin_remove_tag, tagLabel(tag)),
                                 modifier = Modifier.size(18.dp),
                             )
                         },

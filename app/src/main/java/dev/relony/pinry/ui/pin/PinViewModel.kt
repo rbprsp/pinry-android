@@ -20,7 +20,8 @@ class PinViewModel(
     private val repository: PinRepository,
     private val boards: BoardRepository,
     private val id: Int,
-    private val me: String,
+    /** Null when browsing without an account. */
+    private val me: String?,
 ) : ViewModel() {
     /** Shown straight away when the pin was already in a feed; fetched otherwise (e.g. after process death). */
     private val _pin = MutableStateFlow(repository.cached(id))
@@ -38,7 +39,9 @@ class PinViewModel(
 
     val webUrl: String get() = repository.webUrl(id)
 
-    fun isMine(pin: Pin) = pin.submitter.username == me
+    fun isMine(pin: Pin) = me != null && pin.submitter.username == me
+
+    val canSave: Boolean get() = me != null
 
     /** The user's boards for "Save to board"; null until loaded. */
     var myBoards by mutableStateOf<List<BoardName>?>(null)
@@ -89,7 +92,7 @@ class PinViewModel(
         }
     }
 
-    fun loadBoards() = boardAction { myBoards = boards.names(me) }
+    fun loadBoards() = boardAction { myBoards = boards.names(checkNotNull(me)) }
 
     fun saveTo(board: BoardName) = boardAction {
         boards.addPin(board.id, id)

@@ -19,14 +19,22 @@ class LoginViewModel(private val auth: AuthRepository, lastServer: String?) : Vi
         private set
 
     val canSubmit get() = !busy && server.isNotBlank() && username.isNotBlank() && password.isNotEmpty()
+    val canBrowse get() = !busy && server.isNotBlank()
 
     fun submit() {
-        if (!canSubmit) return
+        if (canSubmit) attempt { auth.login(server, username.trim(), password) }
+    }
+
+    fun browse() {
+        if (canBrowse) attempt { auth.browse(server) }
+    }
+
+    private fun attempt(action: suspend () -> Unit) {
         busy = true
         errors = emptyMap()
         viewModelScope.launch {
             try {
-                auth.login(server, username.trim(), password)
+                action()
             } catch (e: LoginException) {
                 errors = e.fields
             } finally {

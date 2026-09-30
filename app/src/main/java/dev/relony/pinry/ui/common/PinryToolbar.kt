@@ -106,7 +106,7 @@ fun <K> ToolbarScaffold(
             }
         }
         AnimatedVisibility(
-            visible = showToolbar,
+            visible = showToolbar && fabActions.isNotEmpty(),
             enter = slideInVertically { it * 2 },
             exit = slideOutVertically { it * 2 },
             modifier = Modifier.align(Alignment.BottomEnd),

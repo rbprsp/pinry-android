@@ -225,6 +225,44 @@ class AuthRepositoryTest {
     }
 
     @Test
+    fun publicInstanceCanBeBrowsedWithoutAnAccount() = runBlocking {
+        pinry.enqueue(response("[]", headers = arrayOf("Set-Cookie: csrftoken=csrf123; Path=/")))
+        pinry.enqueue(response("""{"count":0,"next":null,"results":[]}"""))
+
+        app.auth.browse(base)
+
+        val session = (app.auth.state.value as SessionState.LoggedIn).session
+        assertTrue(session.isAnonymous)
+        assertNull(session.username)
+        pinry.takeRequest()
+        assertEquals("/api/v2/pins/", pinry.takeRequest().url.encodedPath)
+
+        pinry.enqueue(response("""{"count":0,"results":[]}"""))
+        app.get(pinry.url("/api/v2/pins/"))
+        assertNull("no token without an account", pinry.takeRequest().headers["Authorization"])
+
+        val restarted = App()
+        restarted.auth.restore()
+        assertTrue((restarted.auth.state.value as SessionState.LoggedIn).session.isAnonymous)
+    }
+
+    @Test
+    fun privateInstanceRefusesBrowsingWithoutAnAccount() = runBlocking {
+        pinry.enqueue(response("[]", headers = arrayOf("Set-Cookie: csrftoken=csrf123; Path=/")))
+        // PUBLIC = False: Django middleware answers with an empty text/html 403.
+        pinry.enqueue(response("", code = 403, type = "text/html"))
+
+        try {
+            app.auth.browse(base)
+            fail("expected LoginException")
+        } catch (e: LoginException) {
+            assertTrue(e.fields[AuthRepository.FIELD_SERVER]!!.contains("private"))
+        }
+        assertTrue(app.auth.state.value !is SessionState.LoggedIn)
+        assertNull(store.read())
+    }
+
+    @Test
     fun serverAddressIsNormalised() {
         assertEquals("https://pinry.example.com/", parseServerUrl(" pinry.example.com ").toString())
         assertEquals("http://nas:8080/", parseServerUrl("http://nas:8080").toString())

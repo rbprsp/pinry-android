@@ -6,7 +6,7 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 First release.
 
-- Log in to a Pinry server, public or private (`PUBLIC = False`), over https or plain http on a LAN.
+- Log in to a Pinry server, public or private (`PUBLIC = False`), over https or plain http on a LAN; browse public servers read-only without an account.
 - Masonry feed with infinite scroll and pull to refresh; feeds per tag, user and board.
 - Pin detail with a full-screen zoom viewer; source link and sharing.
 - Create pins from the gallery, from a URL (page links use their preview image) or from Android's share sheet. HEIC and rotated phone photos are converted before upload.

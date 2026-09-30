@@ -26,7 +26,7 @@ An unofficial Android app for [Pinry](https://github.com/pinry/pinry), the self-
 - Browse your Pinry in a masonry feed with infinite scroll, or by tag, user and board. Tap a pin to zoom into the full image.
 - Pin from your gallery, from a URL, or from any app with Android's share sheet. Links to web pages use the page's preview image. HEIC and rotated phone photos are fixed before upload.
 - Edit and delete your pins, tag them with autocomplete, and manage boards (create, rename, make private, delete).
-- Works with private instances (`PUBLIC = False`), over https or plain http on your home network.
+- Browse public instances without an account, or log in to private ones (`PUBLIC = False`), over https or plain http on your home network.
 - Material 3 Expressive design, with colors from your wallpaper or any color you pick, nine palette styles, light, dark and pure black themes, and three grid sizes. Each pin's screen takes its colors from the image, and pins fly from the grid into their own screen.
 - A Baseline Profile speeds up startup and scrolling, and the app is about 2.5 MB.
 - No analytics, ads or crash reporting. See [PRIVACY.md](PRIVACY.md).

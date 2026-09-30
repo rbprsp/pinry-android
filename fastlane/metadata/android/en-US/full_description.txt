@@ -1,0 +1,32 @@
+An unofficial Android app for <a href="https://github.com/pinry/pinry">Pinry</a>, the self-hosted Pinterest alternative. You need your own Pinry server (2.x) to use it.
+
+<b>Browse</b>
+<ul>
+<li>Masonry feed with infinite scroll and pull to refresh</li>
+<li>Feeds per tag, user and board</li>
+<li>Full-screen image viewer with pinch and double-tap zoom</li>
+</ul>
+
+<b>Pin from anywhere</b>
+<ul>
+<li>From your gallery, from a URL, or from any app with Android's share sheet</li>
+<li>Links to web pages use the page's preview image</li>
+<li>HEIC and rotated phone photos are fixed before upload</li>
+<li>Tags with autocomplete, private pins, straight into a board</li>
+</ul>
+
+<b>Organise</b>
+<ul>
+<li>Edit and delete your pins</li>
+<li>Create, rename, hide and delete boards; save pins to them or remove them</li>
+</ul>
+
+<b>Made to look good</b>
+<ul>
+<li>Material 3 Expressive design</li>
+<li>Colors from your wallpaper, a swatch or any hue; nine palette styles</li>
+<li>Light, dark and pure black themes; three grid sizes</li>
+<li>Each pin's screen takes its colors from the image</li>
+</ul>
+
+Browse public servers without an account, or log in to private ones; plain http on your home network works too. No analytics, no ads, no crash reporting: the app only talks to your server, to Gravatar for avatars, and to pages you pin from.

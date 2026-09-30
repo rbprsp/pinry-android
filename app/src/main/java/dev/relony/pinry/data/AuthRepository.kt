@@ -85,6 +85,31 @@ class AuthRepository(
         activate(session)
     }
 
+    /**
+     * Read-only browsing without an account. Only public instances allow it: with `PUBLIC = False`
+     * Pinry refuses the pin list to anyone without a session.
+     */
+    suspend fun browse(serverInput: String) {
+        val requested = parseServerUrl(serverInput)
+            ?: throw LoginException(mapOf(FIELD_SERVER to "Enter the server address"))
+        val base = probe(requested, followRedirect = true)
+        try {
+            api(base).pins(offset = 0, limit = 1)
+        } catch (e: HttpException) {
+            val message = if (e.code() == 401 || e.code() == 403) {
+                "This server is private: log in to see its pins"
+            } else {
+                "Couldn't load pins (HTTP ${e.code()})"
+            }
+            throw LoginException(mapOf(FIELD_SERVER to message))
+        } catch (e: IOException) {
+            throw unreachable(e)
+        }
+        val session = Session(base.toString(), cookies = cookies.all().map(Cookie::toString))
+        store.write(session)
+        activate(session)
+    }
+
     suspend fun logout() {
         val base = server.baseUrl
         if (base != null) {

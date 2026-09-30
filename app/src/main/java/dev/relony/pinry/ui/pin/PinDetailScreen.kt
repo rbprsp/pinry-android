@@ -69,6 +69,7 @@ import dev.relony.pinry.ui.common.PinryLoadingIndicator
 import dev.relony.pinry.ui.common.aspectRatio
 import dev.relony.pinry.ui.common.gravatarUrl
 import dev.relony.pinry.ui.common.gridCacheKey
+import dev.relony.pinry.ui.common.tagLabel
 
 @Composable
 fun PinDetailScreen(
@@ -102,7 +103,7 @@ fun PinDetailScreen(
                 webUrl = vm.webUrl,
                 ownActions = if (vm.isMine(p)) OwnActions(onEdit, onDelete = { confirmDelete = true }, deleteFailed) else null,
                 boardActions = BoardActions(
-                    onSave = { vm.loadBoards(); pickingBoard = true },
+                    onSave = if (vm.canSave) ({ vm.loadBoards(); pickingBoard = true }) else null,
                     removeFrom = fromBoard?.takeIf { vm.removedFrom != it },
                     onRemove = { vm.removeFrom(it) },
                     message = vm.boardError
@@ -147,7 +148,8 @@ fun PinDetailScreen(
 private class OwnActions(val onEdit: () -> Unit, val onDelete: () -> Unit, val deleteFailed: Boolean)
 
 private class BoardActions(
-    val onSave: () -> Unit,
+    /** Null without an account. */
+    val onSave: (() -> Unit)?,
     /** The board this pin was opened from, when it can be removed from it. */
     val removeFrom: BoardName?,
     val onRemove: (BoardName) -> Unit,
@@ -191,7 +193,7 @@ private fun PinDetails(
         ) {
             ActionGroup(
                 buildList {
-                    add(Action(R.drawable.ic_bookmark, stringResource(R.string.pin_save), boardActions.onSave, primary = true))
+                    boardActions.onSave?.let { add(Action(R.drawable.ic_bookmark, stringResource(R.string.pin_save), it, primary = true)) }
                     add(Action(R.drawable.ic_share, stringResource(R.string.pin_share), {
                         val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, webUrl)
                         context.startActivity(Intent.createChooser(send, null))
@@ -227,7 +229,7 @@ private fun PinDetails(
             }
             if (pin.tags.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    pin.tags.forEach { tag -> AssistChip(onClick = { onTag(tag) }, label = { Text("#$tag") }) }
+                    pin.tags.forEach { tag -> AssistChip(onClick = { onTag(tag) }, label = { Text(tagLabel(tag)) }) }
                 }
             }
             Row(

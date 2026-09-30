@@ -5,13 +5,19 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberCoroutineScope
@@ -20,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -58,6 +65,7 @@ import dev.relony.pinry.ui.theme.screenTitle
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import kotlinx.serialization.Serializable
+import dev.relony.pinry.ui.common.tagLabel
 
 @Serializable data object HomeKey : NavKey
 @Serializable data object BoardsKey : NavKey
@@ -70,17 +78,18 @@ import kotlinx.serialization.Serializable
 @Serializable data class EditPinKey(val id: Int) : NavKey
 @Serializable data object SettingsKey : NavKey
 
-private val tabs = listOf(
-    ToolbarTab<NavKey>(HomeKey, R.drawable.ic_home, R.string.tab_home),
-    ToolbarTab<NavKey>(BoardsKey, R.drawable.ic_boards, R.string.tab_boards),
-    ToolbarTab<NavKey>(ProfileKey, R.drawable.ic_profile, R.string.tab_profile),
-)
+private val homeTab = ToolbarTab<NavKey>(HomeKey, R.drawable.ic_home, R.string.tab_home)
+private val boardsTab = ToolbarTab<NavKey>(BoardsKey, R.drawable.ic_boards, R.string.tab_boards)
+private val profileTab = ToolbarTab<NavKey>(ProfileKey, R.drawable.ic_profile, R.string.tab_profile)
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PinryAppUi(session: Session, onLogout: () -> Unit) {
     val container = appContainer()
+    // Null when browsing a public instance without an account: read-only, no Boards tab, no "+".
     val username = session.username
+    val host = session.baseUrl.toHttpUrl().host
+    val tabs = if (username == null) listOf(homeTab, profileTab) else listOf(homeTab, boardsTab, profileTab)
     val scope = rememberCoroutineScope()
     // Home is always the root; another tab sits on top of it, so Back from a tab returns Home.
     val backStack = rememberNavBackStack(HomeKey)
@@ -101,7 +110,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
             if (key != HomeKey) backStack.add(key)
         },
         showToolbar = tabs.any { it.key == backStack.lastOrNull() },
-        fabActions = listOf(
+        fabActions = if (username == null) emptyList() else listOf(
             FabAction(R.drawable.ic_photo, R.string.create_from_gallery) {
                 pickImage.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
             },
@@ -124,23 +133,27 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
                 }
                 entry<BoardsKey> {
                     BoardsScreen(
-                        viewModel { BoardsViewModel(container.boards, username) },
+                        viewModel { BoardsViewModel(container.boards, checkNotNull(username)) },
                         onOpen = { open(FeedKey(PinFilter.Board(it.id, it.name))) },
                     )
                 }
                 entry<ProfileKey> {
-                    FeedScreen(
-                        feedViewModel(container, PinFilter.User(username)),
-                        onOpen = { open(PinKey(it.id)) },
-                        header = { ProfileHeader(username, onSettings = { open(SettingsKey) }) },
-                    )
+                    if (username == null) {
+                        GuestProfile(host, onLogin = onLogout, onSettings = { open(SettingsKey) })
+                    } else {
+                        FeedScreen(
+                            feedViewModel(container, PinFilter.User(username)),
+                            onOpen = { open(PinKey(it.id)) },
+                            header = { ProfileHeader(username, onSettings = { open(SettingsKey) }) },
+                        )
+                    }
                 }
                 entry<FeedKey> { key ->
                     val filter = key.filter
                     if (filter is PinFilter.Board) {
                         BoardFeedScreen(
                             feed = feedViewModel(container, filter),
-                            vm = viewModel { BoardViewModel(container.boards, filter.id, username) },
+                            vm = viewModel { BoardViewModel(container.boards, filter.id, checkNotNull(username)) },
                             fallbackTitle = filter.name,
                             onOpen = { open(PinKey(it.id, fromBoard = BoardName(filter.id, filter.name))) },
                             onBack = back,
@@ -170,7 +183,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
                 }
                 entry<CreateKey> { key ->
                     CreatePinScreen(
-                        viewModel { container.createPinViewModel(context, username, key.source) },
+                        viewModel { container.createPinViewModel(context, checkNotNull(username), key.source) },
                         onClose = back,
                         onDone = back,
                     )
@@ -182,7 +195,12 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
                     SettingsScreen(
                         settings = LocalAppSettings.current,
                         onChange = { transform -> scope.launch { container.settings.update(transform) } },
-                        account = stringResource(R.string.settings_account_line, username, session.baseUrl.toHttpUrl().host),
+                        account = if (username == null) {
+                            stringResource(R.string.settings_guest_line, host)
+                        } else {
+                            stringResource(R.string.settings_account_line, username, host)
+                        },
+                        signedIn = username != null,
                         onLogout = onLogout,
                         onBack = back,
                     )
@@ -203,9 +221,29 @@ private fun feedViewModel(container: AppContainer, filter: PinFilter) =
 
 private fun PinFilter.title(): String? = when (this) {
     PinFilter.All -> null
-    is PinFilter.Tag -> "#$name"
+    is PinFilter.Tag -> tagLabel(name)
     is PinFilter.User -> username
     is PinFilter.Board -> name
+}
+
+/** Profile tab without an account: where you are, and the way to log in. */
+@Composable
+private fun GuestProfile(host: String, onLogin: () -> Unit, onSettings: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().statusBarsPadding().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(stringResource(R.string.guest_title, host), style = MaterialTheme.typography.screenTitle, textAlign = TextAlign.Center)
+        Text(
+            stringResource(R.string.guest_body),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Button(onClick = onLogin) { Text(stringResource(R.string.login_submit)) }
+        TextButton(onClick = onSettings) { Text(stringResource(R.string.settings)) }
+    }
 }
 
 @Composable

@@ -56,6 +56,8 @@ fun SettingsScreen(
     settings: AppSettings,
     onChange: ((AppSettings) -> AppSettings) -> Unit,
     account: String,
+    /** Without an account the button leads to the login screen instead. */
+    signedIn: Boolean,
     onLogout: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -115,7 +117,7 @@ fun SettingsScreen(
             }
             Section(stringResource(R.string.settings_account)) {
                 Text(account, style = MaterialTheme.typography.bodyLarge)
-                OutlinedButton(onClick = onLogout) { Text(stringResource(R.string.logout)) }
+                OutlinedButton(onClick = onLogout) { Text(stringResource(if (signedIn) R.string.logout else R.string.login_submit)) }
             }
             Text(
                 stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),

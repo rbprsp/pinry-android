@@ -7,6 +7,10 @@
     <string name="login_username">Username</string>
     <string name="login_password">Password</string>
     <string name="login_submit">Log in</string>
+    <string name="login_browse">Browse without an account</string>
+    <string name="guest_title">Browsing %1$s</string>
+    <string name="guest_body">Without an account you can look at the public pins, but not save, create or organise them.</string>
+    <string name="settings_guest_line">Browsing %1$s without an account</string>
     <string name="login_http_warning">Not encrypted: your password and pins travel in plain text. Use https:// unless this server is on your own network.</string>
     <string name="logout">Log out</string>
     <string name="back">Back</string>
@@ -33,7 +37,7 @@
     <string name="pin_description">Description</string>
     <string name="pin_tags">Add tags</string>
     <string name="pin_tags_hint">Enter or a comma adds the tag</string>
-    <string name="pin_remove_tag">Remove #%1$s</string>
+    <string name="pin_remove_tag">Remove %1$s</string>
     <string name="pin_private">Private</string>
     <string name="pin_private_hint">Only you can see it</string>
     <string name="pin_edit">Edit</string>

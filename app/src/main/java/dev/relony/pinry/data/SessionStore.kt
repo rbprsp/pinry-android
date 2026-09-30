@@ -11,11 +11,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Session(
     val baseUrl: String,
-    val username: String,
-    val token: String,
+    /** Null together with [token] when browsing a public instance without an account. */
+    val username: String? = null,
+    val token: String? = null,
     /** Cookies in `Set-Cookie` form, restored with `Cookie.parse(baseUrl, …)`. */
     val cookies: List<String> = emptyList(),
-)
+) {
+    val isAnonymous: Boolean get() = token == null
+}
 
 class SessionStore(private val store: DataStore<Preferences>) {
     suspend fun read(): Session? = store.data.first()[SESSION]
