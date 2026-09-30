@@ -3,13 +3,18 @@ package io.github.relony.pinry
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
 import io.github.relony.pinry.data.AuthRepository
+import io.github.relony.pinry.data.BoardRepository
+import io.github.relony.pinry.data.ImageUrlResolver
 import io.github.relony.pinry.data.PinRepository
 import io.github.relony.pinry.data.SessionStore
+import io.github.relony.pinry.data.TagRepository
 import io.github.relony.pinry.data.api.PinryApi
 import io.github.relony.pinry.data.api.createPinryApi
 import io.github.relony.pinry.data.net.AuthInterceptor
 import io.github.relony.pinry.data.net.HostCookieJar
 import io.github.relony.pinry.data.net.ServerContext
+import io.github.relony.pinry.data.net.SlowCallTimeouts
+import io.github.relony.pinry.data.net.UserAgent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,7 +32,9 @@ class AppContainer(context: Context) {
 
     val http: OkHttpClient = OkHttpClient.Builder()
         .cookieJar(cookies)
+        .addInterceptor(UserAgent("PinryAndroid/${BuildConfig.VERSION_NAME} (self-hosted Pinry client; +https://github.com/pinry/pinry)"))
         .addInterceptor(AuthInterceptor(server))
+        .addInterceptor(SlowCallTimeouts())
         .build()
 
     val auth = AuthRepository(http, server, cookies, SessionStore(context.sessionDataStore), scope)
@@ -45,6 +52,9 @@ class AppContainer(context: Context) {
     private fun baseUrl(): HttpUrl = checkNotNull(server.baseUrl) { "Not logged in" }
 
     val pins = PinRepository(::api, ::baseUrl)
+    val boards = BoardRepository(::api)
+    val tags = TagRepository(::api)
+    val imageUrls = ImageUrlResolver(http)
 
     init {
         scope.launch { auth.restore() }

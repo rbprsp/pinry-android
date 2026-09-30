@@ -19,15 +19,21 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -54,30 +60,59 @@ import io.github.relony.pinry.ui.common.gridCacheKey
 fun PinDetailScreen(
     vm: PinViewModel,
     onBack: () -> Unit,
+    onEdit: () -> Unit,
     onOpenImage: () -> Unit,
     onTag: (String) -> Unit,
     onUser: (String) -> Unit,
 ) {
     val pin by vm.pin.collectAsStateWithLifecycle()
     val failed by vm.failed.collectAsStateWithLifecycle()
+    val deleted by vm.deleted.collectAsStateWithLifecycle()
+    val deleteFailed by vm.deleteFailed.collectAsStateWithLifecycle()
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(deleted) { if (deleted) onBack() }
 
     Box(Modifier.fillMaxSize()) {
         when (val p = pin) {
             null -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                 if (failed) TextButton(onClick = vm::load) { Text(stringResource(R.string.retry)) } else PinryLoadingIndicator()
             }
-            else -> PinDetails(p, vm.webUrl, onOpenImage, onTag, onUser)
+            else -> PinDetails(
+                pin = p,
+                webUrl = vm.webUrl,
+                ownActions = if (vm.isMine(p)) OwnActions(onEdit, onDelete = { confirmDelete = true }, deleteFailed) else null,
+                onOpenImage = onOpenImage,
+                onTag = onTag,
+                onUser = onUser,
+            )
         }
         FilledTonalIconButton(onClick = onBack, modifier = Modifier.statusBarsPadding().padding(8.dp)) {
             Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = stringResource(R.string.back))
         }
     }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(stringResource(R.string.pin_delete_confirm_title)) },
+            text = { Text(stringResource(R.string.pin_delete_confirm)) },
+            confirmButton = {
+                TextButton(onClick = { confirmDelete = false; vm.delete() }) {
+                    Text(stringResource(R.string.pin_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
 }
+
+private class OwnActions(val onEdit: () -> Unit, val onDelete: () -> Unit, val deleteFailed: Boolean)
 
 @Composable
 private fun PinDetails(
     pin: Pin,
     webUrl: String,
+    ownActions: OwnActions?,
     onOpenImage: () -> Unit,
     onTag: (String) -> Unit,
     onUser: (String) -> Unit,
@@ -99,7 +134,7 @@ private fun PinDetails(
             Modifier.padding(16.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (source != null) {
                     FilledTonalButton(onClick = {
                         context.startActivity(Intent(Intent.ACTION_VIEW, source.toUri()))
@@ -117,6 +152,18 @@ private fun PinDetails(
                     Spacer(Modifier.size(8.dp))
                     Text(stringResource(R.string.pin_share))
                 }
+                if (ownActions != null) {
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = ownActions.onEdit) {
+                        Icon(painterResource(R.drawable.ic_edit), contentDescription = stringResource(R.string.pin_edit))
+                    }
+                    IconButton(onClick = ownActions.onDelete) {
+                        Icon(painterResource(R.drawable.ic_delete), contentDescription = stringResource(R.string.pin_delete))
+                    }
+                }
+            }
+            if (ownActions?.deleteFailed == true) {
+                Text(stringResource(R.string.pin_delete_failed), color = MaterialTheme.colorScheme.error)
             }
             val description = pin.description?.trim()
             if (!description.isNullOrEmpty()) {

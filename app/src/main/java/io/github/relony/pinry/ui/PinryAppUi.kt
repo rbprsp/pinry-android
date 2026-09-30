@@ -1,5 +1,8 @@
 package io.github.relony.pinry.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -26,10 +29,16 @@ import io.github.relony.pinry.AppContainer
 import io.github.relony.pinry.PinryApp
 import io.github.relony.pinry.R
 import io.github.relony.pinry.data.PinFilter
+import io.github.relony.pinry.ui.common.FabAction
 import io.github.relony.pinry.ui.common.ToolbarScaffold
 import io.github.relony.pinry.ui.common.ToolbarTab
+import io.github.relony.pinry.ui.create.CreatePinScreen
+import io.github.relony.pinry.ui.create.CreateSource
+import io.github.relony.pinry.ui.create.createPinViewModel
 import io.github.relony.pinry.ui.feed.FeedScreen
 import io.github.relony.pinry.ui.feed.FeedViewModel
+import io.github.relony.pinry.ui.pin.EditPinScreen
+import io.github.relony.pinry.ui.pin.EditPinViewModel
 import io.github.relony.pinry.ui.pin.ImageViewerScreen
 import io.github.relony.pinry.ui.pin.PinDetailScreen
 import io.github.relony.pinry.ui.pin.PinViewModel
@@ -41,6 +50,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class FeedKey(val filter: PinFilter) : NavKey
 @Serializable data class PinKey(val id: Int) : NavKey
 @Serializable data class ViewerKey(val id: Int) : NavKey
+@Serializable data class CreateKey(val source: CreateSource) : NavKey
+@Serializable data class EditPinKey(val id: Int) : NavKey
 
 private val tabs = listOf(
     ToolbarTab<NavKey>(HomeKey, R.drawable.ic_home, R.string.tab_home),
@@ -54,8 +65,13 @@ fun PinryAppUi(username: String, onLogout: () -> Unit) {
     // Home is always the root; another tab sits on top of it, so Back from a tab returns Home.
     val backStack = rememberNavBackStack(HomeKey)
     val selectedTab = backStack.lastOrNull { key -> tabs.any { it.key == key } }
-    val open: (NavKey) -> Unit = { backStack.add(it) }
+    // A quick double tap would otherwise stack the same screen twice.
+    val open: (NavKey) -> Unit = { if (backStack.lastOrNull() != it) backStack.add(it) }
     val back: () -> Unit = { backStack.removeLastOrNull() }
+    val context = LocalContext.current
+    val pickImage = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
+        if (uri != null) open(CreateKey(CreateSource.Local(uri.toString())))
+    }
 
     ToolbarScaffold(
         tabs = tabs,
@@ -65,6 +81,12 @@ fun PinryAppUi(username: String, onLogout: () -> Unit) {
             if (key != HomeKey) backStack.add(key)
         },
         showToolbar = tabs.any { it.key == backStack.lastOrNull() },
+        fabActions = listOf(
+            FabAction(R.drawable.ic_photo, R.string.create_from_gallery) {
+                pickImage.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))
+            },
+            FabAction(R.drawable.ic_link, R.string.create_from_url) { open(CreateKey(CreateSource.Url(""))) },
+        ),
     ) {
         NavDisplay(
             backStack = backStack,
@@ -95,15 +117,26 @@ fun PinryAppUi(username: String, onLogout: () -> Unit) {
                 }
                 entry<PinKey> { key ->
                     PinDetailScreen(
-                        viewModel { PinViewModel(container.pins, key.id) },
+                        viewModel { PinViewModel(container.pins, key.id, me = username) },
                         onBack = back,
+                        onEdit = { open(EditPinKey(key.id)) },
                         onOpenImage = { open(ViewerKey(key.id)) },
                         onTag = { open(FeedKey(PinFilter.Tag(it))) },
                         onUser = { open(FeedKey(PinFilter.User(it))) },
                     )
                 }
                 entry<ViewerKey> { key ->
-                    ImageViewerScreen(viewModel { PinViewModel(container.pins, key.id) }, onBack = back)
+                    ImageViewerScreen(viewModel { PinViewModel(container.pins, key.id, me = username) }, onBack = back)
+                }
+                entry<CreateKey> { key ->
+                    CreatePinScreen(
+                        viewModel { container.createPinViewModel(context, username, key.source) },
+                        onClose = back,
+                        onDone = back,
+                    )
+                }
+                entry<EditPinKey> { key ->
+                    EditPinScreen(viewModel { EditPinViewModel(container.pins, container.tags, key.id) }, onBack = back)
                 }
             },
         )

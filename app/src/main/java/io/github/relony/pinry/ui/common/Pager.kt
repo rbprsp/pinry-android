@@ -50,6 +50,26 @@ class Pager<T>(
         loadMore()
     }
 
+    /** A new item at the top of the server's list: shown now, and the next page starts one later. */
+    fun prepend(item: T) {
+        val itemKey = key(item)
+        if (_state.value.items.any { key(it) == itemKey }) return
+        _state.update { it.copy(items = listOf(item) + it.items) }
+        offset++
+    }
+
+    fun replace(item: T) {
+        val itemKey = key(item)
+        _state.update { s -> s.copy(items = s.items.map { if (key(it) == itemKey) item else it }) }
+    }
+
+    /** Deleted on the server: everything after it moved up by one, so the next page starts one earlier. */
+    fun remove(itemKey: Any) {
+        if (_state.value.items.none { key(it) == itemKey }) return
+        _state.update { s -> s.copy(items = s.items.filterNot { key(it) == itemKey }) }
+        offset--
+    }
+
     private suspend fun fetch(reset: Boolean) {
         val from = if (reset) 0 else offset
         _state.update { it.copy(loading = true, refreshing = reset, error = null) }

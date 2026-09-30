@@ -98,4 +98,31 @@ class PagerTest {
         assertFalse(pager.state.value.refreshing)
         assertEquals(0, server.requestedOffsets.last())
     }
+
+    @Test
+    fun deletedPinDoesNotMakeTheNextPageSkipOne() = runTest {
+        val server = FakeServer((10 downTo 1).toList())
+        val pager = pagerOver(server)
+        pager.loadMore(); advanceUntilIdle() // 10 9 8
+
+        server.ids = server.ids - 9
+        pager.remove(9)
+        pager.loadMore(); advanceUntilIdle()
+
+        assertEquals(listOf(10, 8, 7, 6, 5), pager.state.value.items)
+    }
+
+    @Test
+    fun prependedPinShiftsTheNextPage() = runTest {
+        val server = FakeServer((10 downTo 1).toList())
+        val pager = pagerOver(server)
+        pager.loadMore(); advanceUntilIdle()
+
+        server.ids = listOf(11) + server.ids
+        pager.prepend(11)
+        pager.loadMore(); advanceUntilIdle()
+
+        assertEquals(listOf(11, 10, 9, 8, 7, 6, 5), pager.state.value.items)
+        assertEquals(listOf(0, 4), server.requestedOffsets)
+    }
 }
