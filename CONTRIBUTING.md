@@ -12,7 +12,7 @@ Security problems: see [SECURITY.md](SECURITY.md), not the issue tracker.
 
 - JDK 21 and the Android SDK (compile SDK 37).
 - `./gradlew assembleDebug` builds, `./gradlew testDebugUnitTest` runs the unit tests, `./gradlew :app:lintRelease` must stay clean.
-- Release signing: copy `keystore.properties.example` to `keystore.properties`; without it, release builds use the debug key.
+- Release signing: copy `keystore.properties.example` to `keystore.properties`; without it, release builds are unsigned.
 
 ## Code
 

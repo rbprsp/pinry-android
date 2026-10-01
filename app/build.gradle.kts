@@ -43,9 +43,15 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Without keystore.properties (another machine, CI) release builds fall back to the debug key.
-            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            // Unsigned without keystore.properties: F-Droid builds from source and expects that.
+            signingConfig = signingConfigs.findByName("release")
         }
+    }
+
+    // Google's encrypted dependency report; F-Droid and IzzyOnDroid refuse APKs that carry it.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 
     buildFeatures {

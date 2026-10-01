@@ -55,7 +55,7 @@ You need JDK 21 and the Android SDK.
 ```sh
 ./gradlew assembleDebug          # app/build/outputs/apk/debug/
 ./gradlew testDebugUnitTest      # unit tests
-./gradlew assembleRelease        # signed with the debug key unless keystore.properties exists
+./gradlew assembleRelease        # unsigned unless keystore.properties exists
 ```
 
 To sign release builds with your own key, copy [`keystore.properties.example`](keystore.properties.example) to `keystore.properties`; it is git-ignored.
