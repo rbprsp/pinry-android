@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 17+: servers on the local network ("Nearby devices"). Asked for only when the server is local. -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
     <!--
       No backup, no transfer to a new phone: the saved session holds an API token that never expires.

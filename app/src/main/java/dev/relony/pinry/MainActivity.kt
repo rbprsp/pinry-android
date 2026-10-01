@@ -13,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.relony.pinry.data.SessionState
 import dev.relony.pinry.ui.PinryAppUi
+import dev.relony.pinry.ui.common.LocalNetworkGate
 import dev.relony.pinry.ui.login.LoginScreen
 import dev.relony.pinry.ui.login.LoginViewModel
 import dev.relony.pinry.ui.theme.PinryTheme
@@ -36,10 +37,12 @@ class MainActivity : ComponentActivity() {
                         is SessionState.LoggedOut -> LoginScreen(
                             viewModel { LoginViewModel(auth, s.lastServer) }
                         )
-                        is SessionState.LoggedIn -> PinryAppUi(
-                            session = s.session,
-                            onLogout = { scope.launch { auth.logout() } },
-                        )
+                        is SessionState.LoggedIn -> LocalNetworkGate(s.session.baseUrl) {
+                            PinryAppUi(
+                                session = s.session,
+                                onLogout = { scope.launch { auth.logout() } },
+                            )
+                        }
                     }
                 }
             }

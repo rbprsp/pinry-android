@@ -21,6 +21,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -31,11 +32,23 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.relony.pinry.R
 import dev.relony.pinry.data.AuthRepository
+import dev.relony.pinry.data.parseServerUrl
+import dev.relony.pinry.ui.common.rememberLocalNetworkRequest
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(vm: LoginViewModel) {
     val known = setOf(AuthRepository.FIELD_SERVER, "username", "password")
     val otherErrors = vm.errors.filterKeys { it !in known }.values
+    val requestLocalNetwork = rememberLocalNetworkRequest()
+    val scope = rememberCoroutineScope()
+    // A server at home needs a permission first (Android 17+).
+    val connect: (() -> Unit) -> Unit = { action ->
+        scope.launch {
+            parseServerUrl(vm.server)?.let { requestLocalNetwork(it.host) }
+            action()
+        }
+    }
 
     Box(
         Modifier
@@ -77,13 +90,13 @@ fun LoginScreen(vm: LoginViewModel) {
                 error = vm.errors["password"],
                 keyboard = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 password = true,
-                onDone = vm::submit,
+                onDone = { if (vm.canSubmit) connect(vm::submit) },
             )
             otherErrors.forEach {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
             }
             Button(
-                onClick = vm::submit,
+                onClick = { connect(vm::submit) },
                 enabled = vm.canSubmit,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             ) {
@@ -93,7 +106,7 @@ fun LoginScreen(vm: LoginViewModel) {
                     Text(stringResource(R.string.login_submit))
                 }
             }
-            TextButton(onClick = vm::browse, enabled = vm.canBrowse, modifier = Modifier.fillMaxWidth()) {
+            TextButton(onClick = { connect(vm::browse) }, enabled = vm.canBrowse, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.login_browse))
             }
         }

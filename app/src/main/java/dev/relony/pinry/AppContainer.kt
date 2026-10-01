@@ -12,6 +12,8 @@ import dev.relony.pinry.data.api.PinryApi
 import dev.relony.pinry.data.api.createPinryApi
 import dev.relony.pinry.data.net.AuthInterceptor
 import dev.relony.pinry.data.net.HostCookieJar
+import dev.relony.pinry.data.net.LocalNetwork
+import dev.relony.pinry.data.net.LocalNetworkHint
 import dev.relony.pinry.data.net.ServerContext
 import dev.relony.pinry.data.net.SlowCallTimeouts
 import dev.relony.pinry.data.net.UserAgent
@@ -31,6 +33,7 @@ class AppContainer(context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val server = ServerContext()
     private val cookies = HostCookieJar(server)
+    val localNetwork = LocalNetwork(context, scope)
 
     /** No session: used for arbitrary pages and images (link previews). */
     private val anonymousHttp: OkHttpClient = OkHttpClient.Builder()
@@ -40,6 +43,7 @@ class AppContainer(context: Context) {
     /** Shares the anonymous client's connections; adds the session for the configured server only. */
     val http: OkHttpClient = anonymousHttp.newBuilder()
         .cookieJar(cookies)
+        .addInterceptor(LocalNetworkHint(localNetwork))
         .addInterceptor(AuthInterceptor(server))
         .addInterceptor(SlowCallTimeouts())
         .build()

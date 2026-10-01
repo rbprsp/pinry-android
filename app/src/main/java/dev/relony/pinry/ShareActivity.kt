@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.relony.pinry.data.SessionState
 import dev.relony.pinry.data.firstUrl
+import dev.relony.pinry.ui.common.LocalNetworkGate
 import dev.relony.pinry.ui.create.CreatePinScreen
 import dev.relony.pinry.ui.create.CreateSource
 import dev.relony.pinry.ui.create.createPinViewModel
@@ -51,14 +52,16 @@ class ShareActivity : ComponentActivity() {
                     val s = state
                     when {
                         s == SessionState.Loading -> Unit
-                        s is SessionState.LoggedIn && !s.session.isAnonymous -> CreatePinScreen(
-                            viewModel { container.createPinViewModel(this@ShareActivity, checkNotNull(s.session.username), source) },
-                            onClose = ::finish,
-                            onDone = {
-                                Toast.makeText(this@ShareActivity, R.string.share_done, Toast.LENGTH_SHORT).show()
-                                finish()
-                            },
-                        )
+                        s is SessionState.LoggedIn && !s.session.isAnonymous -> LocalNetworkGate(s.session.baseUrl) {
+                            CreatePinScreen(
+                                viewModel { container.createPinViewModel(this@ShareActivity, checkNotNull(s.session.username), source) },
+                                onClose = ::finish,
+                                onDone = {
+                                    Toast.makeText(this@ShareActivity, R.string.share_done, Toast.LENGTH_SHORT).show()
+                                    finish()
+                                },
+                            )
+                        }
                         // Logged out, or browsing without an account: pinning needs one.
                         else -> Column(
                             Modifier.fillMaxSize().padding(24.dp),
