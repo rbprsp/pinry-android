@@ -35,6 +35,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.defaultPopTransitionSpec
 import dev.relony.pinry.AppContainer
 import dev.relony.pinry.PinryApp
 import dev.relony.pinry.R
@@ -101,6 +102,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
     val pickImage = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
         if (uri != null) open(CreateKey(CreateSource.Local(uri.toString())))
     }
+    val pop = defaultPopTransitionSpec<NavKey>()
 
     ToolbarScaffold(
         tabs = tabs,
@@ -123,6 +125,10 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
             backStack = backStack,
             onBack = back,
             sharedTransitionScope = this,
+            // The default for the back gesture shrinks the screen without fading it, which leaves an
+            // opaque copy of it over the grid while a pin's image flies back on its own. Fade instead,
+            // like the back button does.
+            predictivePopTransitionSpec = { pop() },
             entryDecorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator(),
