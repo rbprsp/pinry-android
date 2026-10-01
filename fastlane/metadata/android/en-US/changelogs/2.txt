@@ -1,0 +1,1 @@
+Servers on your home network work on Android 17: the app asks for the Nearby devices permission. The back gesture fades between screens instead of leaving a shrunken copy of the screen.

@@ -2,6 +2,17 @@
 
 All notable changes are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-10-01
+
+### Fixed
+
+- Servers on the local network work on Android 17: the app asks for the "Nearby devices" permission when the server is local.
+- The back gesture fades between screens instead of leaving a shrunken copy of the screen over the grid.
+
+### Changed
+
+- Release APKs leave out Google's encrypted dependency metadata, as F-Droid requires.
+
 ## [0.1.0] - 2026-09-30
 
 First release.
@@ -15,4 +26,5 @@ First release.
 - Material 3 Expressive design: colors from the wallpaper, a swatch or any hue, nine palette styles, light / dark / pure black, three grid densities; screens re-themed from each pin's image; shared-element transitions with predictive back.
 - Baseline Profile for faster startup and smoother scrolling.
 
+[0.1.1]: https://github.com/rbprsp/pinry-android/releases/tag/v0.1.1
 [0.1.0]: https://github.com/rbprsp/pinry-android/releases/tag/v0.1.0
