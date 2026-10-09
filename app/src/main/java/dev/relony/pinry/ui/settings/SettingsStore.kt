@@ -22,6 +22,8 @@ data class AppSettings(
     val seed: Int = DefaultSeed.toArgb(),
     val style: PaletteStyle = PaletteStyle.Expressive,
     val density: GridDensity = GridDensity.Medium,
+    /** Off by default: each avatar request sends gravatar.com a hash of the author's email. */
+    val gravatar: Boolean = false,
 )
 
 class SettingsStore(private val store: DataStore<Preferences>) {
@@ -35,6 +37,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             p[SEED] = new.seed
             p[STYLE] = new.style.name
             p[DENSITY] = new.density.name
+            p[GRAVATAR] = new.gravatar
         }
     }
 
@@ -46,6 +49,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             seed = this[SEED] ?: defaults.seed,
             style = this[STYLE].toEnum(defaults.style),
             density = this[DENSITY].toEnum(defaults.density),
+            gravatar = this[GRAVATAR] ?: defaults.gravatar,
         )
     }
 
@@ -55,6 +59,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val SEED = intPreferencesKey("seed")
         val STYLE = stringPreferencesKey("palette_style")
         val DENSITY = stringPreferencesKey("grid_density")
+        val GRAVATAR = booleanPreferencesKey("gravatar")
     }
 }
 

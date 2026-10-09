@@ -29,4 +29,4 @@ An unofficial Android app for <a href="https://github.com/pinry/pinry">Pinry</a>
 <li>Each pin's screen takes its colors from the image</li>
 </ul>
 
-Browse public servers without an account, or log in to private ones; plain http on your home network works too. No analytics, no ads, no crash reporting: the app only talks to your server, to Gravatar for avatars, and to pages you pin from.
+Browse public servers without an account, or log in to private ones; plain http on your home network works too. No analytics, no ads, no crash reporting: the app only talks to your server and to pages you pin from, unless you turn on Gravatar avatars in Settings.

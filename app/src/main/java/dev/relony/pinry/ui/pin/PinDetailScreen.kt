@@ -12,7 +12,9 @@ import dev.relony.pinry.ui.common.ActionGroup
 import dev.relony.pinry.ui.common.PinCardCorner
 import dev.relony.pinry.ui.common.avatarShape
 import dev.relony.pinry.ui.common.sharedPinImage
+import dev.relony.pinry.ui.theme.LocalAppSettings
 import dev.relony.pinry.ui.theme.SeededTheme
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -240,11 +242,24 @@ private fun PinDetails(
                     .clickable { onUser(pin.submitter.username) }
                     .padding(vertical = 4.dp),
             ) {
-                AsyncImage(
-                    model = gravatarUrl(pin.submitter.gravatar, 96),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp).clip(avatarShape()),
-                )
+                if (LocalAppSettings.current.gravatar) {
+                    AsyncImage(
+                        model = gravatarUrl(pin.submitter.gravatar, 96),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp).clip(avatarShape()),
+                    )
+                } else {
+                    Box(
+                        Modifier.size(40.dp).clip(avatarShape()).background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            pin.submitter.username.take(1).uppercase(),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                }
                 Text(pin.submitter.username, style = MaterialTheme.typography.titleMedium)
             }
             Spacer(Modifier.height(8.dp))

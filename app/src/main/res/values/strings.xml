@@ -79,6 +79,9 @@
     <string name="settings_wallpaper_color">Colors from wallpaper</string>
     <string name="settings_palette">Palette style</string>
     <string name="settings_grid">Grid</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_gravatar">Avatars from Gravatar</string>
+    <string name="settings_gravatar_hint">Sends gravatar.com a hash of each pin author\'s email address</string>
     <string name="settings_account">Account</string>
     <string name="settings_version">Pinry for Android %1$s</string>
     <string name="settings_account_line">%1$s on %2$s</string>

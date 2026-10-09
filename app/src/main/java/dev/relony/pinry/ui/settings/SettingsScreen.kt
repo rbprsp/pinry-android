@@ -115,6 +115,19 @@ fun SettingsScreen(
                     onSelect = { density -> onChange { it.copy(density = density) } },
                 )
             }
+            Section(stringResource(R.string.settings_privacy)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_gravatar))
+                        Text(
+                            stringResource(R.string.settings_gravatar_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(settings.gravatar, onCheckedChange = { on -> onChange { it.copy(gravatar = on) } })
+                }
+            }
             Section(stringResource(R.string.settings_account)) {
                 Text(account, style = MaterialTheme.typography.bodyLarge)
                 OutlinedButton(onClick = onLogout) { Text(stringResource(if (signedIn) R.string.logout else R.string.login_submit)) }
