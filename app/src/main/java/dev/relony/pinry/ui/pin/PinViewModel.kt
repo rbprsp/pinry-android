@@ -4,13 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.relony.pinry.data.BoardRepository
 import dev.relony.pinry.data.PinChange
+import dev.relony.pinry.data.PinFilter
 import dev.relony.pinry.data.PinRepository
+import dev.relony.pinry.data.RelatedPins
 import dev.relony.pinry.data.api.BoardName
 import dev.relony.pinry.data.api.Pin
+import dev.relony.pinry.ui.common.Pager
 import dev.relony.pinry.ui.common.describe
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,6 +56,17 @@ class PinViewModel(
         private set
     var boardError by mutableStateOf<String?>(null)
         private set
+
+    private var related: Pager<Pin>? = null
+    private val relatedSeed = Random.nextLong()
+
+    fun related(pin: Pin): Pager<Pin> = related ?: run {
+        var source: RelatedPins? = null
+        Pager(viewModelScope, key = Pin::id) { offset ->
+            if (offset == 0) source = RelatedPins(pin.tags, exclude = pin.id, seed = relatedSeed) { tag, from -> repository.page(PinFilter.Tag(tag), from) }
+            checkNotNull(source).next(RELATED_PAGE)
+        }.also { related = it; it.loadMore() }
+    }
 
     init {
         if (_pin.value == null) load()
@@ -123,3 +138,5 @@ class PinViewModel(
         }
     }
 }
+
+private const val RELATED_PAGE = 30

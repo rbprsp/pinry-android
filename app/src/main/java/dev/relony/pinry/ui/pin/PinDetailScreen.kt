@@ -16,6 +16,14 @@ import dev.relony.pinry.ui.theme.LocalAppSettings
 import dev.relony.pinry.ui.theme.SeededTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import dev.relony.pinry.ui.common.PinGrid
+import dev.relony.pinry.ui.common.Pager
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.layout.layout
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,15 +34,12 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilledTonalIconButton
@@ -82,6 +87,7 @@ fun PinDetailScreen(
     onOpenImage: () -> Unit,
     onTag: (String) -> Unit,
     onUser: (String) -> Unit,
+    onOpen: (Pin) -> Unit,
 ) {
     val pin by vm.pin.collectAsStateWithLifecycle()
     val failed by vm.failed.collectAsStateWithLifecycle()
@@ -100,22 +106,24 @@ fun PinDetailScreen(
             null -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                 if (failed) TextButton(onClick = vm::load) { Text(stringResource(R.string.retry)) } else PinryLoadingIndicator()
             }
-            else -> PinDetails(
-                pin = p,
-                webUrl = vm.webUrl,
-                ownActions = if (vm.isMine(p)) OwnActions(onEdit, onDelete = { confirmDelete = true }, deleteFailed) else null,
-                boardActions = BoardActions(
-                    onSave = if (vm.canSave) ({ vm.loadBoards(); pickingBoard = true }) else null,
-                    removeFrom = fromBoard?.takeIf { vm.removedFrom != it },
-                    onRemove = { vm.removeFrom(it) },
-                    message = vm.boardError
-                        ?: vm.removedFrom?.let { stringResource(R.string.pin_removed_from_board, it.name) }
-                        ?: vm.savedTo?.let { stringResource(R.string.pin_saved_to, it.name) },
-                ),
-                onOpenImage = onOpenImage,
-                onTag = onTag,
-                onUser = onUser,
-            )
+            else -> RelatedGrid(vm.related(p), onOpen) {
+                PinDetails(
+                    pin = p,
+                    webUrl = vm.webUrl,
+                    ownActions = if (vm.isMine(p)) OwnActions(onEdit, onDelete = { confirmDelete = true }, deleteFailed) else null,
+                    boardActions = BoardActions(
+                        onSave = if (vm.canSave) ({ vm.loadBoards(); pickingBoard = true }) else null,
+                        removeFrom = fromBoard?.takeIf { vm.removedFrom != it },
+                        onRemove = { vm.removeFrom(it) },
+                        message = vm.boardError
+                            ?: vm.removedFrom?.let { stringResource(R.string.pin_removed_from_board, it.name) }
+                            ?: vm.savedTo?.let { stringResource(R.string.pin_saved_to, it.name) },
+                    ),
+                    onOpenImage = onOpenImage,
+                    onTag = onTag,
+                    onUser = onUser,
+                )
+            }
         }
         FilledTonalIconButton(onClick = onBack, modifier = Modifier.statusBarsPadding().padding(8.dp)) {
             Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = stringResource(R.string.back))
@@ -176,7 +184,7 @@ private fun PinDetails(
     val corner by LocalNavAnimatedContentScope.current.transition.animateDp(label = "corner") { state ->
         if (state == EnterExitState.Visible) 0.dp else PinCardCorner
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    Column(Modifier.bleed(GridEdge)) {
         AsyncImage(
             model = rememberFullImageRequest(pin),
             contentDescription = pin.description?.takeIf { it.isNotBlank() }
@@ -190,7 +198,7 @@ private fun PinDetails(
                 .clickable(onClick = onOpenImage),
         )
         Column(
-            Modifier.padding(16.dp).navigationBarsPadding(),
+            Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ActionGroup(
@@ -263,8 +271,34 @@ private fun PinDetails(
                 Text(pin.submitter.username, style = MaterialTheme.typography.titleMedium)
             }
             Spacer(Modifier.height(8.dp))
+            if (pin.tags.isNotEmpty()) {
+                Text(stringResource(R.string.pin_related), style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
+}
+
+private val GridEdge = 8.dp
+
+@Composable
+private fun RelatedGrid(related: Pager<Pin>, onOpen: (Pin) -> Unit, header: @Composable () -> Unit) {
+    val state by related.state.collectAsStateWithLifecycle()
+    val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    PinGrid(
+        state = state,
+        onLoadMore = related::loadMore,
+        onRetry = related::retry,
+        onOpen = onOpen,
+        contentPadding = PaddingValues(start = GridEdge, end = GridEdge, bottom = bottom + GridEdge),
+        header = header,
+    )
+}
+
+private fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
+    val extra = edge.roundToPx() * 2
+    val width = constraints.maxWidth + extra
+    val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+    layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
 }
 
 /** The original image, showing the grid's cached copy until it arrives. */

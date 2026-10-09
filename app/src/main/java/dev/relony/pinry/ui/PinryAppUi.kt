@@ -182,6 +182,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
                         onOpenImage = { open(ViewerKey(key.id)) },
                         onTag = { open(FeedKey(PinFilter.Tag(it))) },
                         onUser = { open(FeedKey(PinFilter.User(it))) },
+                        onOpen = { open(PinKey(it.id)) },
                     )
                 }
                 entry<ViewerKey> { key ->
