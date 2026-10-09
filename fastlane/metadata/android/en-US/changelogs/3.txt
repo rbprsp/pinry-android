@@ -1,0 +1,1 @@
+Under a pin, "More like this" shows other pins that share any of its tags. The tab toolbar appears on pins too, so Home is one tap away. Gravatar avatars are off by default; turn them on in Settings > Privacy.
