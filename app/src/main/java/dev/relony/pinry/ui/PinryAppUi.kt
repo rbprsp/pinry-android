@@ -111,7 +111,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
             while (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
             if (key != HomeKey) backStack.add(key)
         },
-        showToolbar = tabs.any { it.key == backStack.lastOrNull() },
+        showToolbar = backStack.lastOrNull().let { top -> top is PinKey || tabs.any { it.key == top } },
         fabActions = if (username == null) emptyList() else listOf(
             FabAction(R.drawable.ic_photo, R.string.create_from_gallery) {
                 pickImage.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))

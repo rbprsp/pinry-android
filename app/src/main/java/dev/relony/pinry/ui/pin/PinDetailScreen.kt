@@ -17,6 +17,7 @@ import dev.relony.pinry.ui.theme.SeededTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import dev.relony.pinry.ui.common.PinGrid
+import dev.relony.pinry.ui.common.LocalToolbarInset
 import dev.relony.pinry.ui.common.Pager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.layout.layout
@@ -283,7 +284,7 @@ private val GridEdge = 8.dp
 @Composable
 private fun RelatedGrid(related: Pager<Pin>, onOpen: (Pin) -> Unit, header: @Composable () -> Unit) {
     val state by related.state.collectAsStateWithLifecycle()
-    val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + LocalToolbarInset.current
     PinGrid(
         state = state,
         onLoadMore = related::loadMore,
