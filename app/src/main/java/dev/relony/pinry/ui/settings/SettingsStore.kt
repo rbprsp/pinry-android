@@ -24,6 +24,8 @@ data class AppSettings(
     val density: GridDensity = GridDensity.Medium,
     /** Off by default: each avatar request sends gravatar.com a hash of the author's email. */
     val gravatar: Boolean = false,
+    /** Share sends the pin's link along with its picture. */
+    val shareLink: Boolean = false,
 )
 
 class SettingsStore(private val store: DataStore<Preferences>) {
@@ -38,6 +40,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             p[STYLE] = new.style.name
             p[DENSITY] = new.density.name
             p[GRAVATAR] = new.gravatar
+            p[SHARE_LINK] = new.shareLink
         }
     }
 
@@ -50,6 +53,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
             style = this[STYLE].toEnum(defaults.style),
             density = this[DENSITY].toEnum(defaults.density),
             gravatar = this[GRAVATAR] ?: defaults.gravatar,
+            shareLink = this[SHARE_LINK] ?: defaults.shareLink,
         )
     }
 
@@ -60,6 +64,7 @@ class SettingsStore(private val store: DataStore<Preferences>) {
         val STYLE = stringPreferencesKey("palette_style")
         val DENSITY = stringPreferencesKey("grid_density")
         val GRAVATAR = booleanPreferencesKey("gravatar")
+        val SHARE_LINK = booleanPreferencesKey("share_link")
     }
 }
 

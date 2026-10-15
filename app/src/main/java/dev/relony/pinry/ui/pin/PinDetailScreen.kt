@@ -331,14 +331,15 @@ private fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
 @Composable
 fun ShareSheetEffect(vm: PinViewModel, onStarted: () -> Unit = {}) {
     val context = LocalContext.current
+    val withLink = LocalAppSettings.current.shareLink
     val shared = vm.sharedImage
     LaunchedEffect(shared) {
         if (shared != null) {
             val send = Intent(Intent.ACTION_SEND)
                 .setType(shared.mimeType)
                 .putExtra(Intent.EXTRA_STREAM, shared.uri)
-                .putExtra(Intent.EXTRA_TEXT, vm.webUrl)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            if (withLink) send.putExtra(Intent.EXTRA_TEXT, vm.webUrl)
             send.clipData = ClipData.newRawUri(null, shared.uri)
             val chooser = Intent.createChooser(send, null)
                 .putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, arrayOf(ComponentName(context, ShareActivity::class.java)))

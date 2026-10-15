@@ -116,16 +116,13 @@ fun SettingsScreen(
                 )
             }
             Section(stringResource(R.string.settings_privacy)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.settings_gravatar))
-                        Text(
-                            stringResource(R.string.settings_gravatar_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(settings.gravatar, onCheckedChange = { on -> onChange { it.copy(gravatar = on) } })
+                SwitchRow(stringResource(R.string.settings_gravatar), stringResource(R.string.settings_gravatar_hint), settings.gravatar) { on ->
+                    onChange { it.copy(gravatar = on) }
+                }
+            }
+            Section(stringResource(R.string.settings_sharing)) {
+                SwitchRow(stringResource(R.string.settings_share_link), stringResource(R.string.settings_share_link_hint), settings.shareLink) { on ->
+                    onChange { it.copy(shareLink = on) }
                 }
             }
             Section(stringResource(R.string.settings_account)) {
@@ -138,6 +135,17 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+@Composable
+private fun SwitchRow(title: String, hint: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text(title)
+            Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked, onCheckedChange = onCheckedChange)
     }
 }
 
