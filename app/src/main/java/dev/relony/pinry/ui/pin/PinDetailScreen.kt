@@ -1,6 +1,8 @@
 package dev.relony.pinry.ui.pin
 
 import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ComponentName
 import android.content.Intent
 import dev.relony.pinry.data.imageFileName
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
@@ -74,6 +76,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import dev.relony.pinry.R
+import dev.relony.pinry.ShareActivity
 import dev.relony.pinry.data.api.BoardName
 import dev.relony.pinry.data.api.Pin
 import dev.relony.pinry.ui.create.NewBoardDialog
@@ -102,6 +105,22 @@ fun PinDetailScreen(
     var pickingBoard by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(deleted) { if (deleted) onBack() }
     val saveAs = rememberLauncherForActivityResult(CreateDocument("image/*")) { uri -> if (uri != null) vm.downloadTo(uri) }
+    val context = LocalContext.current
+    val shared = vm.sharedImage
+    LaunchedEffect(shared) {
+        if (shared != null) {
+            val send = Intent(Intent.ACTION_SEND)
+                .setType(shared.mimeType)
+                .putExtra(Intent.EXTRA_STREAM, shared.uri)
+                .putExtra(Intent.EXTRA_TEXT, vm.webUrl)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            send.clipData = ClipData.newRawUri(null, shared.uri)
+            val chooser = Intent.createChooser(send, null)
+                .putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, arrayOf(ComponentName(context, ShareActivity::class.java)))
+            context.startActivity(chooser)
+            vm.shareStarted()
+        }
+    }
     val seed = rememberImageSeed(pin?.let { it.image.thumbnail?.image ?: it.image.image })
 
     // The screen takes its colors from the image once they're known.
@@ -115,7 +134,8 @@ fun PinDetailScreen(
             else -> RelatedGrid(vm.related(p), onOpen) {
                 PinDetails(
                     pin = p,
-                    webUrl = vm.webUrl,
+                    onShare = vm::share,
+                    sharing = vm.sharing,
                     ownActions = if (vm.isMine(p)) OwnActions(onEdit, onDelete = { confirmDelete = true }, deleteFailed) else null,
                     boardActions = BoardActions(
                         onSave = if (vm.canSave) ({ vm.loadBoards(); pickingBoard = true }) else null,
@@ -131,7 +151,7 @@ fun PinDetailScreen(
                     },
                     downloading = vm.downloading,
                     downloaded = vm.downloaded,
-                    downloadError = vm.downloadError,
+                    imageError = vm.imageError,
                     onTag = onTag,
                     onUser = onUser,
                 )
@@ -181,14 +201,15 @@ private class BoardActions(
 @Composable
 private fun PinDetails(
     pin: Pin,
-    webUrl: String,
+    onShare: () -> Unit,
+    sharing: Boolean,
     ownActions: OwnActions?,
     boardActions: BoardActions,
     onOpenImage: () -> Unit,
     onDownload: () -> Unit,
     downloading: Boolean,
     downloaded: Boolean,
-    downloadError: String?,
+    imageError: String?,
     onTag: (String) -> Unit,
     onUser: (String) -> Unit,
 ) {
@@ -220,10 +241,7 @@ private fun PinDetails(
             ActionGroup(
                 buildList {
                     boardActions.onSave?.let { add(Action(R.drawable.ic_bookmark, stringResource(R.string.pin_save), it, primary = true)) }
-                    add(Action(R.drawable.ic_share, stringResource(R.string.pin_share), {
-                        val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, webUrl)
-                        context.startActivity(Intent.createChooser(send, null))
-                    }))
+                    add(Action(R.drawable.ic_share, stringResource(R.string.pin_share), onShare, loading = sharing))
                     if (downloaded) {
                         val saved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) R.string.pin_downloaded else R.string.pin_downloaded_file
                         add(Action(R.drawable.ic_check, stringResource(saved), {}))
@@ -251,7 +269,7 @@ private fun PinDetails(
                 Text(stringResource(R.string.pin_delete_failed), color = MaterialTheme.colorScheme.error)
             }
             boardActions.message?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-            downloadError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            imageError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             boardActions.removeFrom?.let { board ->
                 TextButton(onClick = { boardActions.onRemove(board) }) {
                     Text(stringResource(R.string.pin_remove_from_board, board.name))

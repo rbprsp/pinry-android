@@ -6,6 +6,8 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
+import androidx.core.content.FileProvider
+import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,7 +18,8 @@ import okhttp3.ResponseBody
 
 /** Saves a pin's image, fetched from the user's own server, to the device. */
 class ImageSaver(context: Context, private val http: OkHttpClient) {
-    private val resolver = context.applicationContext.contentResolver
+    private val context = context.applicationContext
+    private val resolver = this.context.contentResolver
 
     @RequiresApi(Build.VERSION_CODES.Q)
     suspend fun saveToPictures(url: String, pinId: Int) = withContext(Dispatchers.IO) {
@@ -44,8 +47,19 @@ class ImageSaver(context: Context, private val http: OkHttpClient) {
         fetch(url) { body -> write(body, target) }
     }
 
-    private fun fetch(url: String, use: (ResponseBody) -> Unit) {
-        http.newCall(Request.Builder().url(url).build()).execute().use { response ->
+    /** A copy in the app's cache for the share sheet; replaces the previous one. */
+    suspend fun saveToCache(url: String, pinId: Int): SharedImage = withContext(Dispatchers.IO) {
+        val dir = File(context.cacheDir, "shared").apply { deleteRecursively(); mkdirs() }
+        val file = File(dir, imageFileName(url, pinId))
+        val type = fetch(url) { body ->
+            file.outputStream().use { body.byteStream().copyTo(it) }
+            imageMimeType(body.contentType()?.let { "${it.type}/${it.subtype}" }, file.name)
+        }
+        SharedImage(FileProvider.getUriForFile(context, "${context.packageName}.files", file), type)
+    }
+
+    private fun <T> fetch(url: String, use: (ResponseBody) -> T): T {
+        return http.newCall(Request.Builder().url(url).build()).execute().use { response ->
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
             use(response.body)
         }
@@ -56,6 +70,8 @@ class ImageSaver(context: Context, private val http: OkHttpClient) {
         out.use { body.byteStream().copyTo(it) }
     }
 }
+
+data class SharedImage(val uri: Uri, val mimeType: String)
 
 private val ImageTypes = mapOf(
     "jpg" to "image/jpeg", "jpeg" to "image/jpeg", "png" to "image/png", "gif" to "image/gif", "webp" to "image/webp",

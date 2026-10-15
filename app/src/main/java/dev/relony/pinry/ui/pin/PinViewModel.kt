@@ -11,6 +11,7 @@ import dev.relony.pinry.data.PinChange
 import dev.relony.pinry.data.PinFilter
 import dev.relony.pinry.data.PinRepository
 import dev.relony.pinry.data.RelatedPins
+import dev.relony.pinry.data.SharedImage
 import dev.relony.pinry.data.api.BoardName
 import dev.relony.pinry.data.api.Pin
 import dev.relony.pinry.ui.common.Pager
@@ -135,8 +136,36 @@ class PinViewModel(
         private set
     var downloaded by mutableStateOf(false)
         private set
-    var downloadError by mutableStateOf<String?>(null)
+    var imageError by mutableStateOf<String?>(null)
         private set
+
+    var sharing by mutableStateOf(false)
+        private set
+    /** Ready for the share sheet; cleared once the screen has opened it. */
+    var sharedImage by mutableStateOf<SharedImage?>(null)
+        private set
+
+    fun share() {
+        val pin = _pin.value ?: return
+        if (sharing) return
+        sharing = true
+        imageError = null
+        viewModelScope.launch {
+            try {
+                sharedImage = images.saveToCache(pin.image.image, pin.id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                imageError = describe(e)
+            } finally {
+                sharing = false
+            }
+        }
+    }
+
+    fun shareStarted() {
+        sharedImage = null
+    }
 
     @RequiresApi(Build.VERSION_CODES.Q)
     fun download() = downloadAction { pin -> images.saveToPictures(pin.image.image, pin.id) }
@@ -148,7 +177,7 @@ class PinViewModel(
         if (downloading) return
         downloading = true
         downloaded = false
-        downloadError = null
+        imageError = null
         viewModelScope.launch {
             try {
                 action(pin)
@@ -159,7 +188,7 @@ class PinViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                downloadError = describe(e)
+                imageError = describe(e)
             } finally {
                 downloading = false
             }
