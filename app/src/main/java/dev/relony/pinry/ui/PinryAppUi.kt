@@ -63,6 +63,8 @@ import dev.relony.pinry.ui.pin.EditPinViewModel
 import dev.relony.pinry.ui.pin.ImageViewerScreen
 import dev.relony.pinry.ui.pin.PinDetailScreen
 import dev.relony.pinry.ui.pin.PinQuickActions
+import dev.relony.pinry.ui.search.SearchScreen
+import dev.relony.pinry.ui.search.SearchViewModel
 import dev.relony.pinry.ui.pin.PinViewModel
 import dev.relony.pinry.ui.settings.SettingsScreen
 import dev.relony.pinry.ui.theme.LocalAppSettings
@@ -75,6 +77,7 @@ import dev.relony.pinry.ui.common.tagLabel
 @Serializable data object HomeKey : NavKey
 @Serializable data object BoardsKey : NavKey
 @Serializable data object ProfileKey : NavKey
+@Serializable data object SearchKey : NavKey
 @Serializable data class FeedKey(val filter: PinFilter) : NavKey
 /** [fromBoard]: opened from one of the user's boards, so the pin can be removed from it. */
 @Serializable data class PinKey(val id: Int, val fromBoard: BoardName? = null) : NavKey
@@ -86,6 +89,7 @@ import dev.relony.pinry.ui.common.tagLabel
 private val homeTab = ToolbarTab<NavKey>(HomeKey, R.drawable.ic_home, R.string.tab_home)
 private val boardsTab = ToolbarTab<NavKey>(BoardsKey, R.drawable.ic_boards, R.string.tab_boards)
 private val profileTab = ToolbarTab<NavKey>(ProfileKey, R.drawable.ic_profile, R.string.tab_profile)
+private val searchTab = ToolbarTab<NavKey>(SearchKey, R.drawable.ic_search, R.string.tab_search)
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -94,7 +98,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
     // Null when browsing a public instance without an account: read-only, no Boards tab, no "+".
     val username = session.username
     val host = session.baseUrl.toHttpUrl().host
-    val tabs = if (username == null) listOf(homeTab, profileTab) else listOf(homeTab, boardsTab, profileTab)
+    val tabs = if (username == null) listOf(homeTab, searchTab, profileTab) else listOf(homeTab, boardsTab, searchTab, profileTab)
     val scope = rememberCoroutineScope()
     // Home is always the root; another tab sits on top of it, so Back from a tab returns Home.
     val backStack = rememberNavBackStack(HomeKey)
@@ -154,6 +158,13 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
                     BoardsScreen(
                         viewModel { BoardsViewModel(container.boards, checkNotNull(username)) },
                         onOpen = { open(FeedKey(PinFilter.Board(it.id, it.name))) },
+                    )
+                }
+                entry<SearchKey> {
+                    SearchScreen(
+                        viewModel { SearchViewModel(container.tags, container.boards) },
+                        onTag = { open(FeedKey(PinFilter.Tag(it))) },
+                        onBoard = { open(FeedKey(PinFilter.Board(it.id, it.name))) },
                     )
                 }
                 entry<ProfileKey> {

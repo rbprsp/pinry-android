@@ -13,3 +13,11 @@ class TagRepository(private val api: () -> PinryApi) {
         cached = null
     }
 }
+
+/** Tags containing [query], ignoring case; those starting with it come first. */
+fun matchingTags(tags: List<String>, query: String, limit: Int = 20): List<String> {
+    val q = query.trim()
+    if (q.isEmpty()) return emptyList()
+    val (prefix, inside) = tags.filter { it.contains(q, ignoreCase = true) }.partition { it.startsWith(q, ignoreCase = true) }
+    return (prefix + inside).take(limit)
+}

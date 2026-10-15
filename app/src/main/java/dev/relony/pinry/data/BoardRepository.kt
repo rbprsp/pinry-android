@@ -34,6 +34,11 @@ class BoardRepository(private val api: () -> PinryApi, private val baseUrl: () -
 
     suspend fun board(id: Int): Board = api().board(id).withMediaFrom(baseUrl())
 
+    suspend fun search(query: String): List<Board> {
+        val base = baseUrl()
+        return api().searchBoards(query).results.map { it.withMediaFrom(base) }
+    }
+
     suspend fun names(username: String): List<BoardName> = api().boardNames(username)
 
     suspend fun create(name: String): Board =

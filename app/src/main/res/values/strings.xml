@@ -3,6 +3,13 @@
     <string name="tab_home">Home</string>
     <string name="tab_boards">Boards</string>
     <string name="tab_profile">Profile</string>
+    <string name="tab_search">Search</string>
+    <string name="search_hint">Tags and boards</string>
+    <string name="search_note">Pinry searches tags and board names, not pin descriptions.</string>
+    <string name="search_empty">Nothing found</string>
+    <string name="search_tags">Tags</string>
+    <string name="search_boards">Boards</string>
+    <string name="search_board_by">by %1$s</string>
     <string name="login_server">Server</string>
     <string name="login_username">Username</string>
     <string name="login_password">Password</string>

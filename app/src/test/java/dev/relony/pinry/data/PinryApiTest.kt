@@ -44,6 +44,17 @@ class PinryApiTest {
     }
 
     @Test
+    fun boardSearchSendsTheQuery() = runBlocking {
+        server.enqueue(json("""{"count":0,"next":null,"previous":null,"results":[]}"""))
+
+        api.searchBoards("tokyo ghoul")
+
+        val request = server.takeRequest()
+        assertEquals("/api/v2/boards/", request.url.encodedPath)
+        assertEquals("tokyo ghoul", request.url.queryParameter("search"))
+    }
+
+    @Test
     fun pinsPageParsesPinryResponse() = runBlocking {
         server.enqueue(json("""{"count":1,"next":null,"previous":null,"results":[$PIN_JSON]}"""))
 

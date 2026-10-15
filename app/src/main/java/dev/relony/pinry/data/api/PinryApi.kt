@@ -69,6 +69,9 @@ interface PinryApi {
         @Query("limit") limit: Int = 50,
     ): Page<Board>
 
+    @GET("api/v2/boards/")
+    suspend fun searchBoards(@Query("search") query: String, @Query("limit") limit: Int = 20): Page<Board>
+
     @GET("api/v2/boards/{id}/")
     suspend fun board(@Path("id") id: Int): Board
 
