@@ -25,6 +25,9 @@ class PinRepository(private val api: () -> PinryApi, private val baseUrl: () -> 
     /** Pins seen in any feed, so the detail screen can show one without waiting for the network. */
     private val known = ConcurrentHashMap<Int, Pin>()
 
+    /** The pin ids each feed has shown, in order, so the image viewer can page through them. */
+    private val orders = ConcurrentHashMap<PinFilter, List<Int>>()
+
     private val _changes = MutableSharedFlow<PinChange>(extraBufferCapacity = 16)
 
     /** Edits made in this app, so open feeds and screens can update without reloading. */
@@ -42,6 +45,12 @@ class PinRepository(private val api: () -> PinryApi, private val baseUrl: () -> 
     }
 
     fun cached(id: Int): Pin? = known[id]
+
+    fun rememberOrder(filter: PinFilter, ids: List<Int>) {
+        orders[filter] = ids
+    }
+
+    fun order(filter: PinFilter): List<Int>? = orders[filter]
 
     suspend fun pin(id: Int): Pin = api().pin(id).withMediaFrom(baseUrl()).also { known[id] = it }
 

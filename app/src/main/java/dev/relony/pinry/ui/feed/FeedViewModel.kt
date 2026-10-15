@@ -12,7 +12,7 @@ import dev.relony.pinry.ui.common.Pager
 import kotlinx.coroutines.launch
 
 class FeedViewModel(
-    repository: PinRepository,
+    private val repository: PinRepository,
     boards: BoardRepository,
     private val filter: PinFilter,
 ) : ViewModel() {
@@ -20,6 +20,7 @@ class FeedViewModel(
 
     init {
         pager.loadMore()
+        viewModelScope.launch { pager.state.collect { state -> repository.rememberOrder(filter, state.items.map(Pin::id)) } }
         viewModelScope.launch {
             repository.changes.collect { change ->
                 when (change) {

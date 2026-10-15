@@ -63,6 +63,7 @@ import dev.relony.pinry.ui.pin.EditPinViewModel
 import dev.relony.pinry.ui.pin.ImageViewerScreen
 import dev.relony.pinry.ui.pin.PinDetailScreen
 import dev.relony.pinry.ui.pin.PinQuickActions
+import dev.relony.pinry.ui.pin.ViewerViewModel
 import dev.relony.pinry.ui.search.SearchScreen
 import dev.relony.pinry.ui.search.SearchViewModel
 import dev.relony.pinry.ui.pin.PinViewModel
@@ -80,8 +81,9 @@ import dev.relony.pinry.ui.common.tagLabel
 @Serializable data object SearchKey : NavKey
 @Serializable data class FeedKey(val filter: PinFilter) : NavKey
 /** [fromBoard]: opened from one of the user's boards, so the pin can be removed from it. */
-@Serializable data class PinKey(val id: Int, val fromBoard: BoardName? = null) : NavKey
-@Serializable data class ViewerKey(val id: Int) : NavKey
+/** [source]: the feed the pin was opened from, which the image viewer can swipe through. */
+@Serializable data class PinKey(val id: Int, val fromBoard: BoardName? = null, val source: PinFilter? = null) : NavKey
+@Serializable data class ViewerKey(val id: Int, val source: PinFilter? = null) : NavKey
 @Serializable data class CreateKey(val source: CreateSource) : NavKey
 @Serializable data class EditPinKey(val id: Int) : NavKey
 @Serializable data object SettingsKey : NavKey
@@ -152,7 +154,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
             ),
             entryProvider = entryProvider {
                 entry<HomeKey> {
-                    FeedScreen(feedViewModel(container, PinFilter.All), onOpen = { open(PinKey(it.id)) })
+                    FeedScreen(feedViewModel(container, PinFilter.All), onOpen = { open(PinKey(it.id, source = PinFilter.All)) })
                 }
                 entry<BoardsKey> {
                     BoardsScreen(
@@ -173,7 +175,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
                     } else {
                         FeedScreen(
                             feedViewModel(container, PinFilter.User(username)),
-                            onOpen = { open(PinKey(it.id)) },
+                            onOpen = { open(PinKey(it.id, source = PinFilter.User(username))) },
                             header = { ProfileHeader(username, onSettings = { open(SettingsKey) }) },
                         )
                     }
@@ -185,13 +187,13 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
                             feed = feedViewModel(container, filter),
                             vm = viewModel { BoardViewModel(container.boards, filter.id, checkNotNull(username)) },
                             fallbackTitle = filter.name,
-                            onOpen = { open(PinKey(it.id, fromBoard = BoardName(filter.id, filter.name))) },
+                            onOpen = { open(PinKey(it.id, fromBoard = BoardName(filter.id, filter.name), source = filter)) },
                             onBack = back,
                         )
                     } else {
                         FeedScreen(
                             feedViewModel(container, filter),
-                            onOpen = { open(PinKey(it.id)) },
+                            onOpen = { open(PinKey(it.id, source = filter)) },
                             title = filter.title(),
                             onBack = back,
                         )
@@ -203,14 +205,20 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
                         fromBoard = key.fromBoard,
                         onBack = back,
                         onEdit = { open(EditPinKey(key.id)) },
-                        onOpenImage = { open(ViewerKey(key.id)) },
+                        onOpenImage = { open(ViewerKey(key.id, key.source)) },
                         onTag = { open(FeedKey(PinFilter.Tag(it))) },
                         onUser = { open(FeedKey(PinFilter.User(it))) },
                         onOpen = { open(PinKey(it.id)) },
                     )
                 }
                 entry<ViewerKey> { key ->
-                    ImageViewerScreen(viewModel { PinViewModel(container.pins, container.boards, container.images, key.id, me = username) }, onBack = back)
+                    ImageViewerScreen(
+                        viewModel { ViewerViewModel(container.pins, key.id, key.source) },
+                        pinViewModel = { id ->
+                            viewModel(key = "viewer-pin-$id") { PinViewModel(container.pins, container.boards, container.images, id, me = username) }
+                        },
+                        onBack = back,
+                    )
                 }
                 entry<CreateKey> { key ->
                     CreatePinScreen(
