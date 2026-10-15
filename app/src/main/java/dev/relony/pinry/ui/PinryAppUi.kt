@@ -19,6 +19,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -40,6 +41,7 @@ import dev.relony.pinry.AppContainer
 import dev.relony.pinry.PinryApp
 import dev.relony.pinry.R
 import dev.relony.pinry.data.PinFilter
+import dev.relony.pinry.data.api.Pin
 import dev.relony.pinry.data.Session
 import dev.relony.pinry.data.api.BoardName
 import dev.relony.pinry.ui.boards.BoardFeedScreen
@@ -50,6 +52,7 @@ import dev.relony.pinry.ui.common.FabAction
 import dev.relony.pinry.ui.common.LocalSharedTransitionScope
 import dev.relony.pinry.ui.common.ToolbarScaffold
 import dev.relony.pinry.ui.common.ToolbarTab
+import dev.relony.pinry.ui.common.LocalPinMenu
 import dev.relony.pinry.ui.create.CreatePinScreen
 import dev.relony.pinry.ui.create.CreateSource
 import dev.relony.pinry.ui.create.createPinViewModel
@@ -59,6 +62,7 @@ import dev.relony.pinry.ui.pin.EditPinScreen
 import dev.relony.pinry.ui.pin.EditPinViewModel
 import dev.relony.pinry.ui.pin.ImageViewerScreen
 import dev.relony.pinry.ui.pin.PinDetailScreen
+import dev.relony.pinry.ui.pin.PinQuickActions
 import dev.relony.pinry.ui.pin.PinViewModel
 import dev.relony.pinry.ui.settings.SettingsScreen
 import dev.relony.pinry.ui.theme.LocalAppSettings
@@ -103,6 +107,15 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
         if (uri != null) open(CreateKey(CreateSource.Local(uri.toString())))
     }
     val pop = defaultPopTransitionSpec<NavKey>()
+    // Scoped to the screen whose grid was long-pressed, so the view models go away with it.
+    val pinMenu: @Composable (Pin, () -> Unit) -> Unit = remember(container, username) {
+        { pin, onDismiss ->
+            val vm = viewModel(key = "pin-menu-${pin.id}") {
+                PinViewModel(container.pins, container.boards, container.images, pin.id, me = username)
+            }
+            PinQuickActions(vm, onDismiss)
+        }
+    }
 
     ToolbarScaffold(
         tabs = tabs,
@@ -120,7 +133,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
         ),
     ) {
         SharedTransitionLayout {
-        CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+        CompositionLocalProvider(LocalSharedTransitionScope provides this, LocalPinMenu provides pinMenu) {
         NavDisplay(
             backStack = backStack,
             onBack = back,

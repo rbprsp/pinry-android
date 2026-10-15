@@ -20,6 +20,7 @@
     <string name="pin_open_source">Source</string>
     <string name="pin_share">Share</string>
     <string name="pin_download">Download</string>
+    <string name="pin_actions">Pin actions</string>
     <string name="pin_downloading">Downloading…</string>
     <string name="pin_downloaded">Saved to Pictures/Pinry</string>
     <string name="pin_downloaded_file">Saved</string>

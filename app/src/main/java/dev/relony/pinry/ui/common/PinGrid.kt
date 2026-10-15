@@ -1,6 +1,7 @@
 package dev.relony.pinry.ui.common
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -27,10 +28,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,6 +49,9 @@ import dev.relony.pinry.data.api.Pin
 import dev.relony.pinry.ui.theme.LocalAppSettings
 
 private val Spacing = 8.dp
+
+/** Actions for a long-pressed pin, shown over any grid; null disables long-press. */
+val LocalPinMenu = staticCompositionLocalOf<(@Composable (pin: Pin, onDismiss: () -> Unit) -> Unit)?> { null }
 
 /** Masonry grid of pins that asks for the next page when the end comes within 10 items. */
 @Composable
@@ -57,6 +66,9 @@ fun PinGrid(
     header: (@Composable () -> Unit)? = null,
 ) {
     val loadMore by rememberUpdatedState(onLoadMore)
+    val menu = LocalPinMenu.current
+    var menuPin by remember { mutableStateOf<Pin?>(null) }
+    menuPin?.let { pin -> menu?.invoke(pin) { menuPin = null } }
     LaunchedEffect(gridState) {
         snapshotFlow {
             val info = gridState.layoutInfo
@@ -82,7 +94,13 @@ fun PinGrid(
                 item(key = "header", contentType = "header", span = StaggeredGridItemSpan.FullLine) { header() }
             }
             items(state.items, key = { it.id }, contentType = { "pin" }) { pin ->
-                PinCard(pin, cellWidthPx, onClick = { onOpen(pin) }, Modifier.animateItem())
+                PinCard(
+                    pin,
+                    cellWidthPx,
+                    onClick = { onOpen(pin) },
+                    onLongClick = if (menu != null) ({ menuPin = pin }) else null,
+                    modifier = Modifier.animateItem(),
+                )
             }
             if (!state.endReached || state.error != null) {
                 item(key = "footer", contentType = "footer", span = StaggeredGridItemSpan.FullLine) {
@@ -100,7 +118,14 @@ fun PinGrid(
 }
 
 @Composable
-fun PinCard(pin: Pin, widthPx: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun PinCard(
+    pin: Pin,
+    widthPx: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+) {
+    val haptics = LocalHapticFeedback.current
     val context = LocalPlatformContext.current
     val request = remember(pin.id, widthPx) {
         ImageRequest.Builder(context)
@@ -110,7 +135,6 @@ fun PinCard(pin: Pin, widthPx: Int, onClick: () -> Unit, modifier: Modifier = Mo
     }
     Column(modifier) {
         Surface(
-            onClick = onClick,
             shape = RoundedCornerShape(PinCardCorner),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             modifier = Modifier.sharedPinImage(pin.id, PinCardCorner),
@@ -120,7 +144,14 @@ fun PinCard(pin: Pin, widthPx: Int, onClick: () -> Unit, modifier: Modifier = Mo
                 contentDescription = pin.description?.takeIf { it.isNotBlank() }
                     ?: stringResource(R.string.pin_by, pin.submitter.username),
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth().aspectRatio(pin.image.gridAspectRatio()),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(pin.image.gridAspectRatio())
+                    .combinedClickable(
+                        onClick = onClick,
+                        onLongClickLabel = stringResource(R.string.pin_actions),
+                        onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } },
+                    ),
             )
         }
         val description = pin.description?.trim()

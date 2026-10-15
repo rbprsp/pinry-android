@@ -1,6 +1,5 @@
 package dev.relony.pinry.ui.pin
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,7 +19,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.relony.pinry.R
-import dev.relony.pinry.ui.common.ActionIcon
 import dev.relony.pinry.ui.common.PinryLoadingIndicator
 import me.saket.telephoto.zoomable.coil3.ZoomableAsyncImage
 
@@ -49,21 +47,7 @@ fun ImageViewerScreen(vm: PinViewModel, onBack: () -> Unit) {
                 onClick = { if (!vm.downloaded) download() },
                 modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp),
             ) {
-                val saved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) R.string.pin_downloaded else R.string.pin_downloaded_file
-                ActionIcon(
-                    icon = when {
-                        vm.downloading -> null
-                        vm.downloaded -> R.drawable.ic_check
-                        else -> R.drawable.ic_download
-                    },
-                    contentDescription = stringResource(
-                        when {
-                            vm.downloading -> R.string.pin_downloading
-                            vm.downloaded -> saved
-                            else -> R.string.pin_download
-                        },
-                    ),
-                )
+                DownloadIcon(vm)
             }
         }
         vm.imageError?.let {

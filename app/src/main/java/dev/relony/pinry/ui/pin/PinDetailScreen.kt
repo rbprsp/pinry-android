@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import dev.relony.pinry.ui.common.Action
+import dev.relony.pinry.ui.common.ActionIcon
 import dev.relony.pinry.ui.common.ActionGroup
 import dev.relony.pinry.ui.common.PinCardCorner
 import dev.relony.pinry.ui.common.avatarShape
@@ -105,22 +106,7 @@ fun PinDetailScreen(
     var pickingBoard by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(deleted) { if (deleted) onBack() }
     val download = rememberDownload(vm)
-    val context = LocalContext.current
-    val shared = vm.sharedImage
-    LaunchedEffect(shared) {
-        if (shared != null) {
-            val send = Intent(Intent.ACTION_SEND)
-                .setType(shared.mimeType)
-                .putExtra(Intent.EXTRA_STREAM, shared.uri)
-                .putExtra(Intent.EXTRA_TEXT, vm.webUrl)
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            send.clipData = ClipData.newRawUri(null, shared.uri)
-            val chooser = Intent.createChooser(send, null)
-                .putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, arrayOf(ComponentName(context, ShareActivity::class.java)))
-            context.startActivity(chooser)
-            vm.shareStarted()
-        }
-    }
+    ShareSheetEffect(vm)
     val seed = rememberImageSeed(pin?.let { it.image.thumbnail?.image ?: it.image.image })
 
     // The screen takes its colors from the image once they're known.
@@ -341,6 +327,48 @@ private fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
     layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
 }
 
+/** Opens the share sheet once [PinViewModel.share] has the image ready. */
+@Composable
+fun ShareSheetEffect(vm: PinViewModel, onStarted: () -> Unit = {}) {
+    val context = LocalContext.current
+    val shared = vm.sharedImage
+    LaunchedEffect(shared) {
+        if (shared != null) {
+            val send = Intent(Intent.ACTION_SEND)
+                .setType(shared.mimeType)
+                .putExtra(Intent.EXTRA_STREAM, shared.uri)
+                .putExtra(Intent.EXTRA_TEXT, vm.webUrl)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            send.clipData = ClipData.newRawUri(null, shared.uri)
+            val chooser = Intent.createChooser(send, null)
+                .putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, arrayOf(ComponentName(context, ShareActivity::class.java)))
+            context.startActivity(chooser)
+            vm.shareStarted()
+            onStarted()
+        }
+    }
+}
+
+/** The download button's icon: download, a loading indicator while saving, then a checkmark. */
+@Composable
+fun DownloadIcon(vm: PinViewModel) {
+    val saved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) R.string.pin_downloaded else R.string.pin_downloaded_file
+    ActionIcon(
+        icon = when {
+            vm.downloading -> null
+            vm.downloaded -> R.drawable.ic_check
+            else -> R.drawable.ic_download
+        },
+        contentDescription = stringResource(
+            when {
+                vm.downloading -> R.string.pin_downloading
+                vm.downloaded -> saved
+                else -> R.string.pin_download
+            },
+        ),
+    )
+}
+
 /** Saves to Pictures/Pinry, or through the "Save as" picker before Android 10. */
 @Composable
 fun rememberDownload(vm: PinViewModel): () -> Unit {
@@ -365,7 +393,7 @@ fun rememberFullImageRequest(pin: Pin): ImageRequest {
 }
 
 @Composable
-private fun SaveToBoardDialog(
+fun SaveToBoardDialog(
     boards: List<BoardName>?,
     onPick: (BoardName) -> Unit,
     onCreate: (String) -> Unit,
