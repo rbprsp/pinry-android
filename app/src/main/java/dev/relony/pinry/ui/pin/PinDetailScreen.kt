@@ -104,7 +104,7 @@ fun PinDetailScreen(
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var pickingBoard by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(deleted) { if (deleted) onBack() }
-    val saveAs = rememberLauncherForActivityResult(CreateDocument("image/*")) { uri -> if (uri != null) vm.downloadTo(uri) }
+    val download = rememberDownload(vm)
     val context = LocalContext.current
     val shared = vm.sharedImage
     LaunchedEffect(shared) {
@@ -146,9 +146,7 @@ fun PinDetailScreen(
                             ?: vm.savedTo?.let { stringResource(R.string.pin_saved_to, it.name) },
                     ),
                     onOpenImage = onOpenImage,
-                    onDownload = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) vm.download() else saveAs.launch(imageFileName(p.image.image, p.id))
-                    },
+                    onDownload = download,
                     downloading = vm.downloading,
                     downloaded = vm.downloaded,
                     imageError = vm.imageError,
@@ -341,6 +339,17 @@ private fun Modifier.bleed(edge: Dp) = layout { measurable, constraints ->
     val width = constraints.maxWidth + extra
     val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
     layout(constraints.maxWidth, placeable.height) { placeable.place(-extra / 2, 0) }
+}
+
+/** Saves to Pictures/Pinry, or through the "Save as" picker before Android 10. */
+@Composable
+fun rememberDownload(vm: PinViewModel): () -> Unit {
+    val saveAs = rememberLauncherForActivityResult(CreateDocument("image/*")) { uri -> if (uri != null) vm.downloadTo(uri) }
+    return {
+        val pin = vm.pin.value
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) vm.download()
+        else if (pin != null) saveAs.launch(imageFileName(pin.image.image, pin.id))
+    }
 }
 
 /** The original image, showing the grid's cached copy until it arrives. */

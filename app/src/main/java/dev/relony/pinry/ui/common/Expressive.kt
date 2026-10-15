@@ -108,6 +108,22 @@ class Action(
     val loading: Boolean = false,
 )
 
+/** An icon that animates when it changes; a null [icon] shows a loading indicator. */
+@Composable
+fun ActionIcon(@DrawableRes icon: Int?, contentDescription: String?) {
+    AnimatedContent(
+        targetState = icon,
+        transitionSpec = { (fadeIn() + scaleIn()) togetherWith (fadeOut() + scaleOut()) },
+        label = "icon",
+    ) { res ->
+        if (res == null) {
+            PinryLoadingIndicator(Modifier.size(24.dp).semantics { contentDescription?.let { this.contentDescription = it } })
+        } else {
+            Icon(painterResource(res), contentDescription = contentDescription)
+        }
+    }
+}
+
 /** A row of actions whose pressed button grows while its neighbours shrink; overflow goes to a menu. */
 @Composable
 fun ActionGroup(actions: List<Action>, modifier: Modifier = Modifier) {
@@ -124,17 +140,7 @@ fun ActionGroup(actions: List<Action>, modifier: Modifier = Modifier) {
                 buttonGroupContent = {
                     val interaction = remember { MutableInteractionSource() }
                     val icon = @Composable {
-                        AnimatedContent(
-                            targetState = action.icon.takeUnless { action.loading },
-                            transitionSpec = { (fadeIn() + scaleIn()) togetherWith (fadeOut() + scaleOut()) },
-                            label = "icon",
-                        ) { res ->
-                            if (res == null) {
-                                PinryLoadingIndicator(Modifier.size(24.dp).semantics { contentDescription = action.label })
-                            } else {
-                                Icon(painterResource(res), contentDescription = if (action.primary) null else action.label)
-                            }
-                        }
+                        ActionIcon(action.icon.takeUnless { action.loading }, if (action.primary) null else action.label)
                     }
                     if (action.primary) {
                         FilledTonalButton(
