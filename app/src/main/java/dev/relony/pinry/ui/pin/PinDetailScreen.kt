@@ -2,6 +2,10 @@ package dev.relony.pinry.ui.pin
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import dev.relony.pinry.data.imageFileName
+import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.os.Build
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.core.animateDp
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -97,6 +101,7 @@ fun PinDetailScreen(
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var pickingBoard by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(deleted) { if (deleted) onBack() }
+    val saveAs = rememberLauncherForActivityResult(CreateDocument("image/*")) { uri -> if (uri != null) vm.downloadTo(uri) }
     val seed = rememberImageSeed(pin?.let { it.image.thumbnail?.image ?: it.image.image })
 
     // The screen takes its colors from the image once they're known.
@@ -121,6 +126,12 @@ fun PinDetailScreen(
                             ?: vm.savedTo?.let { stringResource(R.string.pin_saved_to, it.name) },
                     ),
                     onOpenImage = onOpenImage,
+                    onDownload = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) vm.download() else saveAs.launch(imageFileName(p.image.image, p.id))
+                    },
+                    downloading = vm.downloading,
+                    downloaded = vm.downloaded,
+                    downloadError = vm.downloadError,
                     onTag = onTag,
                     onUser = onUser,
                 )
@@ -174,6 +185,10 @@ private fun PinDetails(
     ownActions: OwnActions?,
     boardActions: BoardActions,
     onOpenImage: () -> Unit,
+    onDownload: () -> Unit,
+    downloading: Boolean,
+    downloaded: Boolean,
+    downloadError: String?,
     onTag: (String) -> Unit,
     onUser: (String) -> Unit,
 ) {
@@ -209,6 +224,13 @@ private fun PinDetails(
                         val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, webUrl)
                         context.startActivity(Intent.createChooser(send, null))
                     }))
+                    if (downloaded) {
+                        val saved = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) R.string.pin_downloaded else R.string.pin_downloaded_file
+                        add(Action(R.drawable.ic_check, stringResource(saved), {}))
+                    } else {
+                        val label = stringResource(if (downloading) R.string.pin_downloading else R.string.pin_download)
+                        add(Action(R.drawable.ic_download, label, onDownload, loading = downloading))
+                    }
                     if (source != null) {
                         add(Action(R.drawable.ic_open_in_new, stringResource(R.string.pin_open_source), {
                             try {
@@ -229,6 +251,7 @@ private fun PinDetails(
                 Text(stringResource(R.string.pin_delete_failed), color = MaterialTheme.colorScheme.error)
             }
             boardActions.message?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+            downloadError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             boardActions.removeFrom?.let { board ->
                 TextButton(onClick = { boardActions.onRemove(board) }) {
                     Text(stringResource(R.string.pin_remove_from_board, board.name))

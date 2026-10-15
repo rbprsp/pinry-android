@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
 import dev.relony.pinry.data.AuthRepository
 import dev.relony.pinry.data.BoardRepository
+import dev.relony.pinry.data.ImageSaver
 import dev.relony.pinry.data.ImageUrlResolver
 import dev.relony.pinry.data.PinRepository
 import dev.relony.pinry.data.SessionStore
@@ -68,6 +69,7 @@ class AppContainer(context: Context) {
     // A shared link could point at the Pinry server itself; resolving it must not act as the user.
     val imageUrls = ImageUrlResolver(anonymousHttp)
     val settings = SettingsStore(context.settingsDataStore)
+    val images = ImageSaver(context, http)
 
     init {
         scope.launch { auth.restore() }

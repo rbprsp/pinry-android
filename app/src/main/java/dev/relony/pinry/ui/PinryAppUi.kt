@@ -175,7 +175,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
                 }
                 entry<PinKey> { key ->
                     PinDetailScreen(
-                        viewModel { PinViewModel(container.pins, container.boards, key.id, me = username) },
+                        viewModel { PinViewModel(container.pins, container.boards, container.images, key.id, me = username) },
                         fromBoard = key.fromBoard,
                         onBack = back,
                         onEdit = { open(EditPinKey(key.id)) },
@@ -186,7 +186,7 @@ fun PinryAppUi(session: Session, onLogout: () -> Unit) {
                     )
                 }
                 entry<ViewerKey> { key ->
-                    ImageViewerScreen(viewModel { PinViewModel(container.pins, container.boards, key.id, me = username) }, onBack = back)
+                    ImageViewerScreen(viewModel { PinViewModel(container.pins, container.boards, container.images, key.id, me = username) }, onBack = back)
                 }
                 entry<CreateKey> { key ->
                     CreatePinScreen(

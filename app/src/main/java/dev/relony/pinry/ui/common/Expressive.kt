@@ -3,6 +3,12 @@
 package dev.relony.pinry.ui.common
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.relony.pinry.R
@@ -96,6 +104,8 @@ class Action(
     val onClick: () -> Unit,
     /** Shown as a filled button with its label; the others are icon buttons. */
     val primary: Boolean = false,
+    /** Shows a loading indicator in place of the icon. */
+    val loading: Boolean = false,
 )
 
 /** A row of actions whose pressed button grows while its neighbours shrink; overflow goes to a menu. */
@@ -114,7 +124,17 @@ fun ActionGroup(actions: List<Action>, modifier: Modifier = Modifier) {
                 buttonGroupContent = {
                     val interaction = remember { MutableInteractionSource() }
                     val icon = @Composable {
-                        Icon(painterResource(action.icon), contentDescription = if (action.primary) null else action.label)
+                        AnimatedContent(
+                            targetState = action.icon.takeUnless { action.loading },
+                            transitionSpec = { (fadeIn() + scaleIn()) togetherWith (fadeOut() + scaleOut()) },
+                            label = "icon",
+                        ) { res ->
+                            if (res == null) {
+                                PinryLoadingIndicator(Modifier.size(24.dp).semantics { contentDescription = action.label })
+                            } else {
+                                Icon(painterResource(res), contentDescription = if (action.primary) null else action.label)
+                            }
+                        }
                     }
                     if (action.primary) {
                         FilledTonalButton(

@@ -2,7 +2,11 @@ package dev.relony.pinry.ui.pin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import dev.relony.pinry.data.BoardRepository
+import dev.relony.pinry.data.ImageSaver
 import dev.relony.pinry.data.PinChange
 import dev.relony.pinry.data.PinFilter
 import dev.relony.pinry.data.PinRepository
@@ -16,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -23,6 +28,7 @@ import kotlinx.coroutines.launch
 class PinViewModel(
     private val repository: PinRepository,
     private val boards: BoardRepository,
+    private val images: ImageSaver,
     private val id: Int,
     /** Null when browsing without an account. */
     private val me: String?,
@@ -123,6 +129,41 @@ class PinViewModel(
     fun removeFrom(board: BoardName) = boardAction {
         boards.removePin(board.id, id)
         removedFrom = board
+    }
+
+    var downloading by mutableStateOf(false)
+        private set
+    var downloaded by mutableStateOf(false)
+        private set
+    var downloadError by mutableStateOf<String?>(null)
+        private set
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun download() = downloadAction { pin -> images.saveToPictures(pin.image.image, pin.id) }
+
+    fun downloadTo(target: Uri) = downloadAction { pin -> images.saveTo(pin.image.image, target) }
+
+    private fun downloadAction(action: suspend (Pin) -> Unit) {
+        val pin = _pin.value ?: return
+        if (downloading) return
+        downloading = true
+        downloaded = false
+        downloadError = null
+        viewModelScope.launch {
+            try {
+                action(pin)
+                downloading = false
+                downloaded = true
+                delay(2_000)
+                downloaded = false
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                downloadError = describe(e)
+            } finally {
+                downloading = false
+            }
+        }
     }
 
     private fun boardAction(action: suspend () -> Unit) {
