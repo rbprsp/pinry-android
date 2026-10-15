@@ -5,7 +5,6 @@
     <string name="tab_profile">Profile</string>
     <string name="tab_search">Search</string>
     <string name="search_hint">Tags and boards</string>
-    <string name="search_note">Pinry searches tags and board names, not pin descriptions.</string>
     <string name="search_empty">Nothing found</string>
     <string name="search_tags">Tags</string>
     <string name="search_boards">Boards</string>

@@ -52,7 +52,7 @@ fun SearchScreen(vm: SearchViewModel, onTag: (String) -> Unit, onBoard: (Board) 
         )
         val nothing = vm.tags.isEmpty() && vm.boards.isEmpty()
         when {
-            vm.query.isBlank() -> Hint(stringResource(R.string.search_note))
+            vm.query.isBlank() -> Unit
             nothing && vm.searching -> Box(Modifier.fillMaxSize(), Alignment.Center) { PinryLoadingIndicator() }
             nothing -> Hint(vm.error ?: stringResource(R.string.search_empty))
             else -> LazyColumn(contentPadding = PaddingValues(bottom = bottom)) {
