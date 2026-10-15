@@ -10,13 +10,17 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
@@ -34,7 +38,10 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
@@ -127,53 +134,78 @@ fun ActionIcon(@DrawableRes icon: Int?, contentDescription: String?) {
 /** A row of actions whose pressed button grows while its neighbours shrink; overflow goes to a menu. */
 @Composable
 fun ActionGroup(actions: List<Action>, modifier: Modifier = Modifier) {
-    ButtonGroup(
-        overflowIndicator = { menu ->
-            IconButton(onClick = { menu.show() }) {
-                Icon(painterResource(R.drawable.ic_more_vert), contentDescription = stringResource(R.string.more))
-            }
-        },
-        modifier = modifier,
-    ) {
-        actions.forEach { action ->
-            customItem(
-                buttonGroupContent = {
-                    val interaction = remember { MutableInteractionSource() }
-                    val icon = @Composable {
-                        ActionIcon(action.icon.takeUnless { action.loading }, if (action.primary) null else action.label)
-                    }
-                    if (action.primary) {
-                        FilledTonalButton(
-                            onClick = action.onClick,
-                            shapes = ButtonDefaults.shapes(),
-                            interactionSource = interaction,
-                            modifier = Modifier.animateWidth(interaction),
-                        ) {
-                            icon()
-                            Spacer(Modifier.size(8.dp))
-                            Text(action.label)
-                        }
-                    } else {
-                        OutlinedIconButton(
-                            onClick = action.onClick,
-                            shapes = IconButtonDefaults.shapes(),
-                            interactionSource = interaction,
-                            modifier = Modifier.animateWidth(interaction),
-                            content = icon,
-                        )
-                    }
-                },
-                menuContent = { menu ->
-                    DropdownMenuItem(
-                        text = { Text(action.label) },
-                        leadingIcon = { Icon(painterResource(action.icon), contentDescription = null) },
-                        onClick = { menu.dismiss(); action.onClick() },
+    // ButtonGroup's own overflow menu crashes here (material3 1.5.0-alpha29, measured during the
+    // shared-element lookahead pass), so the group only gets the actions that surely fit and the
+    // rest go to a separate menu.
+    BoxWithConstraints(modifier) {
+        val primaries = actions.count { it.primary }
+        val allWidth = PrimarySlot * primaries + IconSlot * (actions.size - primaries)
+        val shown = if (allWidth <= maxWidth) {
+            actions
+        } else {
+            val icons = ((maxWidth - PrimarySlot * primaries - MenuSlot) / IconSlot).toInt().coerceAtLeast(0)
+            actions.take(primaries + icons)
+        }
+        val rest = actions.drop(shown.size)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ButtonGroup(overflowIndicator = {}) {
+                shown.forEach { action ->
+                    customItem(
+                        buttonGroupContent = {
+                            val interaction = remember { MutableInteractionSource() }
+                            val icon = @Composable {
+                                ActionIcon(action.icon.takeUnless { action.loading }, if (action.primary) null else action.label)
+                            }
+                            if (action.primary) {
+                                FilledTonalButton(
+                                    onClick = action.onClick,
+                                    shapes = ButtonDefaults.shapes(),
+                                    interactionSource = interaction,
+                                    modifier = Modifier.animateWidth(interaction),
+                                ) {
+                                    icon()
+                                    Spacer(Modifier.size(8.dp))
+                                    Text(action.label)
+                                }
+                            } else {
+                                OutlinedIconButton(
+                                    onClick = action.onClick,
+                                    shapes = IconButtonDefaults.shapes(),
+                                    interactionSource = interaction,
+                                    modifier = Modifier.animateWidth(interaction),
+                                    content = icon,
+                                )
+                            }
+                        },
+                        menuContent = {},
                     )
-                },
-            )
+                }
+            }
+            if (rest.isNotEmpty()) {
+                Box {
+                    var open by remember { mutableStateOf(false) }
+                    IconButton(onClick = { open = true }) {
+                        Icon(painterResource(R.drawable.ic_more_vert), contentDescription = stringResource(R.string.more))
+                    }
+                    DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                        rest.forEach { action ->
+                            DropdownMenuItem(
+                                text = { Text(action.label) },
+                                leadingIcon = { Icon(painterResource(action.icon), contentDescription = null) },
+                                onClick = { open = false; action.onClick() },
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
+
+/** Widths an action takes in the group, generous enough for a pressed button growing into its neighbours. */
+private val PrimarySlot = 136.dp
+private val IconSlot = 64.dp
+private val MenuSlot = 48.dp
 
 /**
  * Tabs on the vibrant (primaryContainer) toolbar. The selected tab inverts the container/content
