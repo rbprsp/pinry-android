@@ -1,0 +1,1 @@
+Download a pin's picture from its screen or from the full-screen viewer. Share now sends the picture instead of the link. Long-press any pin to save, download or share it. There's a new Search tab for tags and boards, and you can swipe sideways in the viewer to go through the feed. Also fixes a crash when a pin's buttons didn't fit on one row.

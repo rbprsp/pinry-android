@@ -2,6 +2,20 @@
 
 All notable changes are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-10-15
+
+### Added
+
+- Download a pin's picture from its screen or the full-screen viewer. It goes to Pictures/Pinry; on Android 8 and 9 a "Save as" picker opens instead.
+- Share sends the picture instead of the pin's link. To send the link as well, turn it on in Settings > Sharing.
+- Long-press a pin in any grid to save it to a board, download it or share it without opening it.
+- A Search tab finds tags and boards by name.
+- Swipe sideways in the full-screen viewer to move through the feed the pin came from.
+
+### Fixed
+
+- The pin screen no longer crashes when its buttons don't fit on one row, which could happen on your own pins. Buttons that don't fit now go into a ⋮ menu.
+
 ## [0.2.0] - 2026-10-09
 
 ### Added
@@ -38,6 +52,7 @@ First release.
 - Material 3 Expressive design: colors from the wallpaper, a swatch or any hue, nine palette styles, light / dark / pure black, three grid densities; screens re-themed from each pin's image; shared-element transitions with predictive back.
 - Baseline Profile for faster startup and smoother scrolling.
 
+[0.3.0]: https://github.com/rbprsp/pinry-android/releases/tag/v0.3.0
 [0.2.0]: https://github.com/rbprsp/pinry-android/releases/tag/v0.2.0
 [0.1.1]: https://github.com/rbprsp/pinry-android/releases/tag/v0.1.1
 [0.1.0]: https://github.com/rbprsp/pinry-android/releases/tag/v0.1.0
